@@ -1,0 +1,23 @@
+# Simple configuration file for the Routing Engine
+
+# mode should be either 'test','demo' or 'zone_sim'
+# TODO: zone_sim not currently implemented
+mode=test
+
+# integer values defining how many orders and how many vehicles
+vehicles=4
+orders=100
+
+# area coverage (in lon,lat degrees)
+min_lon=39.0
+min_lat=39.0
+max_lon=40.0
+max_lat=40.0
+
+# Visualisation settings
+visualise=yes
+window_height=320
+window_width=520
+background_color=#F3F92F
+node_color=#FFFFFF
+

@@ -1,0 +1,41 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<solver>
+  <!--<environmentMode>FAST_ASSERT</environmentMode>-->
+  <solutionClass>com.openbusiness.opta.RoutingPlannerSolution</solutionClass>
+  
+  <!-- Establish planning entities -->
+  <planningEntityClass>com.openbusiness.opta.OptaDeliveryOrder</planningEntityClass>
+  <planningEntityClass>com.openbusiness.opta.StandStill</planningEntityClass>
+
+  <scoreDirectorFactory>
+    <scoreDefinitionType>HARD_SOFT</scoreDefinitionType>
+    <scoreDrl>/com/openbusiness/configuration/routePlannerScoreRules.drl</scoreDrl>
+  </scoreDirectorFactory>
+
+  <!-- This is fine --> 
+  <termination>
+    <maximumMinutesSpend>1</maximumMinutesSpend>
+  </termination>
+  <constructionHeuristic>
+    <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+  </constructionHeuristic>
+  <localSearch>
+    <unionMoveSelector>
+      <changeMoveSelector/>
+      <swapMoveSelector/>
+      <subChainChangeMoveSelector>
+        <selectReversingMoveToo>true</selectReversingMoveToo>
+      </subChainChangeMoveSelector>
+      <subChainSwapMoveSelector>
+        <selectReversingMoveToo>true</selectReversingMoveToo>
+      </subChainSwapMoveSelector>
+    </unionMoveSelector>
+    <acceptor>
+      <lateAcceptanceSize>200</lateAcceptanceSize>
+    </acceptor>
+    <forager>
+      <acceptedCountLimit>1</acceptedCountLimit>
+    </forager>
+  </localSearch>
+</solver>

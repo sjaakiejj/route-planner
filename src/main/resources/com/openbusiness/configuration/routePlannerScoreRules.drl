@@ -1,0 +1,99 @@
+package com.openbusiness.configuration;
+	dialect "java"
+
+// OptaPlanner Dependencies
+import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScoreHolder;
+
+// Object Dependencies
+import com.openbusiness.opta.OptaDeliveryVehicle;
+import com.openbusiness.opta.OptaDeliveryOrder;
+import com.openbusiness.opta.RoutingPlannerSolution;
+
+global HardSoftScoreHolder scoreHolder;
+
+// #############################################################################
+// HARD CONSTRAINTS 
+// #############################################################################
+
+rule "vehicleVolCapacity"
+   when
+     $vehicle : OptaDeliveryVehicle($capacity : volumeCapacity)
+     $demandTotal : Number(intValue > $capacity) from accumulate(
+        OptaDeliveryOrder(
+	   deliveryVehicle == $vehicle,
+	   $demand : volume
+	),
+	sum($demand)
+     )
+   then
+     double score = $capacity - $demandTotal.intValue();
+     scoreHolder.addHardConstraintMatch(kcontext, (int)score );
+end
+
+// Ensure the fuel usage doesn't go over the capacity
+rule "vehicleFuelCapacity"
+   when
+     $vehicle : OptaDeliveryVehicle($capacity : fuelCapacity,
+     				    $efficiency : fuelEfficiency)
+     $demandTotal : Number(intValue > $capacity) from accumulate(
+        OptaDeliveryOrder(
+	   deliveryVehicle == $vehicle,
+	   previousStandstill != null,
+	   $distToPrevOrder : distanceToPrevOrder
+	),
+	sum($distToPrevOrder / $efficiency)
+     )
+   then
+     double score = $capacity - $demandTotal.intValue();
+     scoreHolder.addHardConstraintMatch(kcontext, (int)score);
+end
+
+// Ensure the weight doesn't go over capacity
+rule "vehicleWeightCapacity"
+   when
+     $vehicle : OptaDeliveryVehicle($capacity : weightCapacity)
+     $demandTotal : Number(intValue > $capacity) from accumulate(
+        OptaDeliveryOrder(
+	   deliveryVehicle == $vehicle,
+	   $demand : weight
+	),
+	sum($demand)
+     )
+   then
+     double score = $capacity - $demandTotal.intValue();
+     scoreHolder.addHardConstraintMatch(kcontext, (int)score);
+end
+
+
+
+// #############################################################################
+// SOFT CONSTRAINTS
+// #############################################################################
+
+
+rule "minimizeFuelCost"
+   when 
+     $order : OptaDeliveryOrder(
+     			previousStandstill != null,
+			$distToPrevOrder  : distanceToPrevOrder
+	      )
+   then
+     OptaDeliveryVehicle vehicle = $order.getDeliveryVehicle();
+     double fuelEfficiency = vehicle.getFuelEfficiency();
+     double score = -$distToPrevOrder / fuelEfficiency;
+     scoreHolder.addSoftConstraintMatch(kcontext, (int)score);
+end
+
+// Whether to make this a hard or soft constraint depends on the client requirements.
+// The current assumption is that we'd like to minimize it but the vehicle
+// can always go to a gas station at the end of its route. 
+rule "distanceFromLastOrderToDepot"
+    when
+        $order : OptaDeliveryOrder(previousStandstill != null)
+        not OptaDeliveryOrder(previousStandstill == $order)
+    then
+        OptaDeliveryVehicle vehicle = $order.getDeliveryVehicle();
+        scoreHolder.addSoftConstraintMatch(kcontext, - (int)$order.getDistanceTo(vehicle));
+end
+
+
