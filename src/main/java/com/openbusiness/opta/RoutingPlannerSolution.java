@@ -84,7 +84,7 @@ public class RoutingPlannerSolution implements Solution<HardSoftScore>
   public void setScore(HardSoftScore score)
   {
     m_score = score;
-    System.out.print("Current Score: " + score + "\r"); // TODO: REmove this line
+  //  System.out.print("Current Score: " + score + "\r"); // TODO: REmove this line
   }
   
   public HardSoftScore getScore()

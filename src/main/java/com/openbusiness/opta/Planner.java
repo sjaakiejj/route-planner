@@ -10,13 +10,15 @@ import com.openbusiness.gen.Location;
 import com.openbusiness.gen.DeliveryVehicle;
 import com.openbusiness.gen.DeliveryOrder;
 import com.openbusiness.gen.DeliverySchedule;
+import com.openbusiness.gen.DeliverySolution;
+
 
 // Java
 import java.util.List;
 import java.util.ArrayList;
 public class Planner
 {
-  public static List<DeliverySchedule> plan(DeliveryVehicle [] vehicles, DeliveryOrder [] orders)
+  public static DeliverySolution plan(DeliveryVehicle [] vehicles, DeliveryOrder [] orders)
   {
     SolverFactory solverFactory = new XmlSolverFactory(
     	"/com/openbusiness/configuration/routePlannerConfig.xml");
@@ -39,10 +41,10 @@ public class Planner
     }
     
     // TODO: Set print as option, not as default
-    System.out.println("Problem Size: " + optaVehicles.size() + 
-    		    " Vehicles, " + optaOrders.size() + 
-		    " Orders, " + 1 + 
-		    " Depots");
+ //   System.out.println("Problem Size: " + optaVehicles.size() + 
+  //  		    " Vehicles, " + optaOrders.size() + 
+//		    " Orders, " + 1 + 
+//		    " Depots");
 
     
     RoutingPlannerSolution unsolved = new RoutingPlannerSolution();
@@ -62,7 +64,7 @@ public class Planner
     
     // TODO: Get the fuel used, the routes taken and assign to the DeliverySchedule
     // objects. One for each vehicle.
-    printResults(solved);
+    //printResults(solved);
     
     List<DeliverySchedule> deliverySchedules = new ArrayList<DeliverySchedule>();
     List<OptaDeliveryVehicle> solvedVehicles = solved.getVehicleList();
@@ -80,7 +82,13 @@ public class Planner
       }
     }
     
-    return deliverySchedules;
+    DeliverySolution deliverySolution = new DeliverySolution(
+    					solved.getScore().getHardScore(),
+					solved.getScore().getSoftScore(),
+					deliverySchedules);
+					
+    
+    return deliverySolution;
   }
   
   public static void printResults(RoutingPlannerSolution solved)

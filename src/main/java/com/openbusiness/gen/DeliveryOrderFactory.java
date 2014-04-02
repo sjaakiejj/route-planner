@@ -9,29 +9,30 @@ import com.openbusiness.app.SoftwareMode;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Properties;
 
 public class DeliveryOrderFactory
 {
-  public static DeliveryOrder[] generate(int mode, int amount)
+  public static DeliveryOrder[] generate(int mode, int amount, Properties prop)
   {
     if(mode == SoftwareMode.TEST)
       return generateTestSet();
     else if(mode == SoftwareMode.DEMO)
-      return generateRandomized(amount);
+      return generateRandomized(amount, prop);
     else
       return null;
   }
   
-  private static DeliveryOrder[] generateRandomized(int amount)
+  private static DeliveryOrder[] generateRandomized(int amount,Properties prop)
   {
     // Randomly generate within the restrictions
     Random rand = new Random();
     List<DeliveryOrder> deliveryOrders = new ArrayList<DeliveryOrder>();
     
-    double volMin = 5;
-    double volRange = 25;
-    double weightMin = 5;
-    double weightRange = 25;
+    double volMin = prop.getProperty("order_vol_lower_bound");
+    double volRange = prop.getProperty("order_vol_range");
+    double weightMin = prop.getProperty("order_weight_lower_bound");
+    double weightRange = prop.getProperty("order_weight_range");
     
     // Read the values one by one
     //while

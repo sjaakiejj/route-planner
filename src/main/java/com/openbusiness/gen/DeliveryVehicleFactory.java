@@ -6,31 +6,39 @@ package com.openbusiness.gen;
 import com.openbusiness.app.SoftwareMode;
  
 import java.util.Random;
+import java.util.Properties;
  
 public class DeliveryVehicleFactory
 {
-  public static DeliveryVehicle[] generate(int mode, int amount)
+  public static DeliveryVehicle[] generate(int mode, int amount, Properties prop)
   {
     if(mode == SoftwareMode.TEST)
       return generateTestSet();
     else if(mode == SoftwareMode.DEMO)
-      return generateRandomized(amount);
+      return generateRandomized(amount,prop);
     // TODO: Implement Simulation Mode
     else
       return null;
   }
   
-  private static DeliveryVehicle[] generateRandomized(int amount)
+  private static DeliveryVehicle[] generateRandomized(int amount, Properties prop)
   {
     DeliveryVehicle [] vehicles = new DeliveryVehicle[amount];
     
     Random rand = new Random();
     
     // TODO: These should be taken from the config file instead
-    double fuelEfRange = 17;   double fuelEfMin = 5;
-    double fuelCapRange = 200; double fuelCapMin = 100;
-    double weightRange = 3000;  double weightMin = 100;
-    double volRange = 3000;     double volMin = 150;
+    double fuelEfRange = Double.parseDouble(prop.getProperty("fuel_efficiency_range"));   
+    double fuelEfMin = Double.parseDouble(prop.getProperty("fuel_efficiency_lower_bound"));
+    
+    double fuelCapRange = Double.parseDouble(prop.getProperty("fuel_capacity_range")); 
+    double fuelCapMin = Double.parseDouble(prop.getProperty("fuel_capacity_lower_bound"));
+    
+    double weightRange = Double.parseDouble(prop.getProperty("weight_capacity_range"));  
+    double weightMin = Double.parseDouble(prop.getProperty("weight_capacity_lower_bound"));
+    
+    double volRange = Double.parseDouble(prop.getProperty("volume_capacity_range"));     
+    double volMin = Double.parseDouble(prop.getProperty("volume_capacity_lower_bound"));
     
     for(int i = 0; i < amount; i++)
     {

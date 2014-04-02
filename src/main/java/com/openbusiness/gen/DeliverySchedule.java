@@ -23,6 +23,11 @@ public class DeliverySchedule
     m_orderList.add(order);
   }
   
+  public DeliveryVehicle getDeliveryVehicle()
+  {
+    return m_assignedVehicle;
+  }
+  
   public List<DeliveryOrder> getOrderList()
   {
     return m_orderList;
