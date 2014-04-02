@@ -17,7 +17,7 @@ Following on that, you need to change the following line to reflect your directo
 
 Change "/home/..." to the absolute directory in which the route planner jar is located. 
 
-After that, you can run the code simply by typing:
+After that, you can run the code simply by navigating to the web_gui directory, and typing:
 
 > meteor
 
