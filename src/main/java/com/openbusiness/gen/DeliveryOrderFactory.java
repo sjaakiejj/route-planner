@@ -29,10 +29,10 @@ public class DeliveryOrderFactory
     Random rand = new Random();
     List<DeliveryOrder> deliveryOrders = new ArrayList<DeliveryOrder>();
     
-    double volMin = prop.getProperty("order_vol_lower_bound");
-    double volRange = prop.getProperty("order_vol_range");
-    double weightMin = prop.getProperty("order_weight_lower_bound");
-    double weightRange = prop.getProperty("order_weight_range");
+    double volMin = Double.parseDouble(prop.getProperty("order_vol_lower_bound"));
+    double volRange = Double.parseDouble(prop.getProperty("order_vol_range"));
+    double weightMin = Double.parseDouble(prop.getProperty("order_weight_lower_bound"));
+    double weightRange = Double.parseDouble(prop.getProperty("order_weight_range"));
     
     // Read the values one by one
     //while

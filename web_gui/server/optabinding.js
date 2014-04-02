@@ -1,4 +1,4 @@
-
+var jar_location = "/home/.../route-planner-1.0-SNAPSHOT-jar-with-dependencies.jar";
 var Future = Npm.require('fibers/future');
 
 function generateSettings(args,callback)
@@ -39,7 +39,7 @@ function planRoute(callback)
 
    var require = Npm.require;
    var spawn = require('child_process').spawn;
-   var model = spawn(modelPath, ["-jar","/home/sjaakiejj/my-programs/OpenBusiness/route-planner/target/route-planner-1.0-SNAPSHOT-jar-with-dependencies.jar",
+   var model = spawn(modelPath, ["-jar",jar_location,
    "-json","/tmp/settings.json"]);
    var answerBuffer = "";
 
