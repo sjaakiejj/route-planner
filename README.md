@@ -13,7 +13,7 @@ Following on that, you need to change the following line to reflect your directo
 
 > ./web_gui/server/optabinding.js: Line 1
 
-var jar_location="/home/.../route-planner-1.0-SNAPSHOT-jar-with-dependencies.jar"
+> var jar_location="/home/.../route-planner-1.0-SNAPSHOT-jar-with-dependencies.jar"
 
 Change "/home/..." to the absolute directory in which the route planner jar is located. 
 
