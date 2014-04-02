@@ -1,0 +1,24 @@
+<template name='vehicleDetail'>
+  <a href='/'>Back</a>
+  <div>
+    <h2>Vehicle {{id}}</h2>
+    <table>
+      {{#each vehicle}}
+        <tr><td>{{key}}</td><td>{{value}}</td></tr>
+      {{/each}}
+    </table>
+  </div>
+  
+  <div>
+  <h3>List of orders</h3>
+    <table> <tr><th>Order</th><th>Latitude</th><th>Longitude</th><th>Volume</th><th>Weight</th></tr>
+      {{#each deliveryOrder}}
+    <tr><td>{{order}}</td>
+        <td>{{decimal latitude}}</td>
+	<td>{{decimal longitute}}</td>
+    	<td>{{decimal volume}}</td>
+	<td>{{decimal weight}}</td></tr>
+      {{/each}}
+    </table>
+  </div>
+</template>

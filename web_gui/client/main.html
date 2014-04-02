@@ -1,0 +1,120 @@
+
+<body>
+</body>
+
+<template name="layout">
+  <div class="nav_bar"><a href='/'>Settings</a></div>
+  {{> yield}}
+</template>
+
+<template name='home'>
+<div class='container'>
+<div class='settings'>
+<h2>Settings</h2>
+  {{> settings}}
+</div>
+
+<div class='Results'>
+  <div class='Score'>
+    {{> score}}
+  </div>
+
+  <div class='vehicleInfoList'>
+    {{> vehicleList}}
+  </div>
+</div>
+</div>
+</template>
+
+<template name="settings">
+  <form id='settings_form'>
+    <input type='hidden' name='mode' value='demo'>
+    <table>
+      <!-- COLUMN 1 -->
+      <tr><th colspan='2'>General Settings</th></tr>
+      <tr><td>Number of Vehicles:</td> 
+      	  <td><input type='number' name='vehicles' value='4'></td>
+      </tr>
+      <tr><td>Number of Orders: </td>
+      	  <td><input type='number' name='orders' value='100'></td>
+      </tr>
+      <!-- Vehicles -->
+      <tr><th colspan='2'>Vehicle Generation</th></tr>
+      <tr><td>Fuel Efficiency Range</td>
+          <td><input type='text' name='fuel_efficiency_range' value='17.0'></td>
+      </tr>
+      <tr><td>Fuel Capacity Range</td>
+          <td><input type='text' name='fuel_capacity_range' value='200.0'></td>
+      </tr>
+      <tr><td>Weight Capacity Range</td>
+          <td><input type='text' name='weight_capacity_range' value='3000.0'></td>
+      </tr>
+      <tr><td>Volume Capacity Range</td>
+          <td><input type='text' name='volume_capacity_range' value='3000.0'></td>
+      </tr>
+      
+      <tr><td>Fuel Efficiency Lower Bounds</td>
+          <td><input type='text' name='fuel_efficiency_lower_bound' value='5.0'></td>
+      </tr>
+      <tr><td>Fuel Capacity Lower Bounds</td>
+          <td><input type='text' name='fuel_capacity_lower_bound' value='100.0'></td>
+      </tr>
+      
+      <tr><td>Weight Capacity Range</td>
+          <td><input type='text' name='weight_capacity_lower_bound' value='100.0'></td>
+      </tr>
+      <tr><td>Volume Capacity Range</td>
+          <td><input type='text' name='volume_capacity_lower_bound' value='150.0'></td>
+      </tr>
+      
+      <!-- Orders -->
+      <tr><th colspan='2'>Order Generation</th></tr>
+      <tr><td>Order Weight Range</td>
+          <td><input type='text' name='order_weight_range' value='25.0'></td>
+      </tr>
+      <tr><td>Order Volume Range</td>
+          <td><input type='text' name='order_vol_range' value='25.0'></td>
+      </tr>
+      
+      <tr><td>Order Weight Lower Bounds</td>
+          <td><input type='text' name='order_weight_lower_bound' value='5.0'></td>
+      </tr>
+      <tr><td>Order Volume Lower Bounds</td>
+          <td><input type='text' name='order_vol_lower_bound' value='5.0'></td>
+      </tr>
+      <tr><td>Minimum Latitude: </td>
+      	  <td><input type='text' name='min_lat' value='39.0'></td>
+      </tr>
+      <tr><td>Minimum Longitude: </td>
+      	  <td><input type='text' name='min_lon' value='39.0'></td>
+      </tr>
+      <tr><td>Maximum Latitude: </td>
+      	  <td><input type='text' name='max_lat' value='40.0'></td>
+      </tr>
+      <tr><td>Maximum Longitude: </td>
+      	  <td><input type='text' name='max_lon' value='40.0'></td>
+      </tr>
+      <tr><td></td><td><input type='submit' value='Calculate'></td></tr>
+    </table>
+  </form>
+</template>
+
+<template name='score'>
+  <h2>Score</h2>
+  <ul>
+   <li>Current Status: {{{solutionStatus}}}</li>
+   <li>Hard Score: {{hardScore}}</li>
+   <li>Soft Score: {{softScore}}</li>
+   <li>Total Fuel Used: {{fuelUsed}}</li>
+   <li>Total Distance Travelled: {{distanceTravelled}}</li>
+  </ul>
+</template>
+
+<template name='vehicleList'>
+ <h2>Vehicle Delivery Routes</h2>
+ <ul>
+ {{#each vehicles}}
+   <li><a href="/vehicle/{{id}}">Vehicle {{id}}</a></li>
+ {{/each}}
+ </ul>
+</template>
