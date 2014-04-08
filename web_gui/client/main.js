@@ -64,6 +64,8 @@ Template.settings.events({
           form[this.name] = this.value;
         });
 	Session.set('solutionStatus','Solving... Please Wait');
+	Session.set('properties', form);
+	
 	
 	Meteor.call('callPlanRoute', "[" + JSON.stringify(form) + "]", 
 	function (err, res) {

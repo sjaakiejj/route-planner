@@ -3,6 +3,7 @@ var canvas_height = window.innerHeight - 100;//canvas_height = 700;
 	console.log(canvas_height);
 
 var stage;
+var bg_layer;
 var layer;
 var ui_layer;
 var stats;
@@ -13,6 +14,8 @@ var circles = new Array();
 var data_box;
 var data_text;
 
+var background;
+
 function init()
 {
   stage = new Kinetic.Stage({
@@ -20,7 +23,12 @@ function init()
     width: canvas_width,
     height: canvas_height
   });
-  
+
+  layer = new Kinetic.Layer();
+  ui_layer = new Kinetic.Layer(); 
+  bg_layer = new Kinetic.Layer(); 
+
+ 
   stats = new Kinetic.Text({
         x: 10,
         y: 10,
@@ -47,13 +55,28 @@ function init()
      stroke: 'black',
      strokeWidth: 4
   });
-
-  layer = new Kinetic.Layer();
-  ui_layer = new Kinetic.Layer(); 
+  
+  background = new Image();
+  background.onload = function() {
+    var yoda = new Kinetic.Image({
+      x: 0,
+      y: 0,
+      image: background,
+      width: canvas_width,
+      height: canvas_height
+    });
+    
+    bg_layer.add(yoda);
+    bg_layer.draw();
+  };
+    
+  background.src = 'singapore.png';
+    
+    
   
   ui_layer.add(stats);    
 
-  stage.add(layer).add(ui_layer);
+  stage.add(bg_layer).add(layer).add(ui_layer);
   
   kineticVisualise();
 }
@@ -79,10 +102,11 @@ Template.visualizer.canvasHeight = function(){
 
 function toCoord(lat,lon)
 { 
-  var min_lat = 39.0; // TODO: Pull from form 
-  var min_lon = 39.0; // TODO: Pull from form 
-  var max_lat = 40.0; // TODO: Pull from form 
-  var max_lon = 40.0; // TODO: Pull from form 
+  var props = Session.get('properties');
+  var min_lat = props['min_lat'];  
+  var min_lon = props['min_lon'];  
+  var max_lat = props['max_lat'];  
+  var max_lon = props['max_lon'];  
   
   var lat_range = max_lat - min_lat;
   var lon_range = max_lon - min_lon;
@@ -312,7 +336,15 @@ function kineticVisualise()
   writeStats("Hard/Soft Score: " + json['hard_score'] + '/' + json['soft_score'] + '\n'
   	     +"Total Fuel Used: " + Number(json['fuel_used']).toFixed(2) + " litre");
   
-  var depot = toCoord( 39.5, 39.5 );
+  var props = Session.get('properties');
+  var centerX = Number(props['min_lat']) + ((Number(props['max_lat']) - 
+  					     Number(props['min_lat'])) / 2.0);
+  var centerY = Number(props['min_lon']) + ((Number(props['max_lon']) - 
+  					     Number(props['min_lon'])) / 2.0);
+  
+  console.log(Session.get('properties'));
+  console.log(centerX);
+  var depot = toCoord( centerX, centerY );
   var id = 0;
   while(json["Vehicle_"+id+"_order"] != undefined)
   {
@@ -383,9 +415,9 @@ function kineticVisualise()
      
     // lines.push(line);
      
+     
      layer.add(line);
      layer.add(final_line);
-     
      
      var i =0;
      for( i = 2; i < line_points.length; i+=2 )
@@ -408,6 +440,16 @@ function kineticVisualise()
      
      id ++;
   }
+  
+  var depotCircle = new Kinetic.Circle({
+     x: depot.x,
+     y: depot.y,
+     radius: radius*2,
+     fill: 'white',
+     stroke: 'black'
+  });
+  
+  layer.add(depotCircle);
   
   console.log("Adding to stage");
  // stage.add(layer);
