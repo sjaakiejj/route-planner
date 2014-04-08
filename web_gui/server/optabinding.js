@@ -1,4 +1,4 @@
-var jar_location = "/home/.../route-planner-1.0-SNAPSHOT-jar-with-dependencies.jar";
+var jar_location = "/home/sjaakiejj/my-programs/OpenBusiness/route-planner/route-planner-1.0-SNAPSHOT-jar-with-dependencies.jar";
 var Future = Npm.require('fibers/future');
 
 function generateSettings(args,callback)

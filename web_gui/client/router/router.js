@@ -4,4 +4,8 @@ Router.map(function(){
   	path: '/vehicle/:_id',
 	layoutTemplate: 'layout'
   });
+  this.route('visualizer', {
+  	path:'/Visualise',
+	layoutTemplate: 'layout'
+  });
 });

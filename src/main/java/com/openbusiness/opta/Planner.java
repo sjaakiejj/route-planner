@@ -80,6 +80,8 @@ public class Planner
         deliverySchedules.get(i).addOrder( currentOrder.getWrappedDeliveryOrder());
 	currentOrder = currentOrder.getNextDeliveryOrder(); 
       }
+      
+      deliverySchedules.get(i).close();
     }
     
     DeliverySolution deliverySolution = new DeliverySolution(

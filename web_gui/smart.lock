@@ -2,13 +2,19 @@
   "meteor": {},
   "dependencies": {
     "basePackages": {
-      "iron-router": {}
+      "iron-router": {},
+      "kinetic.js": {}
     },
     "packages": {
       "iron-router": {
         "git": "https://github.com/EventedMind/iron-router.git",
         "tag": "v0.7.0",
         "commit": "05f34bc48c4cad9fdaa366c1ddcabe6980232ece"
+      },
+      "kinetic.js": {
+        "git": "https://github.com/brentjanderson/meteor-kinetic.git",
+        "tag": "v5.0.1",
+        "commit": "3c29f5bcbcdc9687081b336e59e8387dc02236a5"
       },
       "blaze-layout": {
         "git": "https://github.com/EventedMind/blaze-layout.git",

@@ -32,6 +32,12 @@ public class JSONOutputWriter
       obj.put("weight_capacity", vehicle.getWeightCapacity());
       obj.put("volume_capacity", vehicle.getVolumeCapacity());
       
+      obj.put("volume_used", schedule[i].getVolumeUsed());
+      obj.put("weight_used", schedule[i].getWeightUsed());
+      obj.put("distance_travelled", schedule[i].getDistTravelled());
+      obj.put("fuel_used", schedule[i].getFuelUsed());
+      
+      
       m_output_object.put("Vehicle_"+i,obj);
     }
     
