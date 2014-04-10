@@ -1,52 +1,51 @@
 package com.openbusiness.opta;
-/*
- * Maintain separation to maximise compatibility 
- * 
- */
- 
 // OptaPlanner 
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
-
+import com.openbusiness.opta.solver.VrpOrderDifficultyComparator;
+import com.openbusiness.opta.solver.VehicleUpdatingVariableListener;
+import com.openbusiness.opta.dbs.solver.ArrivalTimeUpdatingVariableListener;
 
 // OpenBusiness
-import com.openbusiness.gen.DeliveryOrder;
+//import com.openbusiness.gen.DeliveryOrder;
 import com.openbusiness.gen.Location;
 
 @PlanningEntity(difficultyComparatorClass = VrpOrderDifficultyComparator.class)
-public class OptaDeliveryOrder implements StandStill
+public class Destination implements StandStill
 {
   // The immutable order object
-  private DeliveryOrder m_order;
-  protected OptaDeliveryOrder m_next;
+  //private Destinati m_order;
+  protected Destination m_next;
   protected StandStill m_prev;
   
-  protected OptaDeliveryVehicle m_deliveryVehicle;
+  protected Vehicle m_deliveryVehicle;
   protected double m_volSize;
   protected double m_weight;
+  protected Location m_location;
   
-  public OptaDeliveryOrder()
+  public Destination()
   {
     m_next = null;
     m_prev = null;
   }
   
-  public OptaDeliveryOrder(DeliveryOrder order)
+  public Destination(Location loc, double vol, double weight)
   {
-    m_order = order;
+   //m_order = order;
     m_next = null;
     m_prev = null;
     
     // Extract data from DeliveryOrder object to model constraints
-    m_volSize = order.getVolume();
-    m_weight = order.getWeight();
+    m_location = loc;
+    m_volSize = vol; //order.getVolume();
+    m_weight = weight; //order.getWeight();
   }
   
-  
+  /*
   public DeliveryOrder getWrappedDeliveryOrder()
   {
     return m_order;
-  }
+  }*/
   
   // ******************************************************************
   // Graph methods
@@ -55,31 +54,33 @@ public class OptaDeliveryOrder implements StandStill
   
   @PlanningVariable(chained =true, 
   		valueRangeProviderRefs = {"vehicleRange", "orderRange"},
-		variableListenerClasses = {VehicleUpdatingVariableListener.class})
+		variableListenerClasses = {VehicleUpdatingVariableListener.class,
+ 					   ArrivalTimeUpdatingVariableListener.class})
   public StandStill getPreviousStandstill()
   {
     return m_prev;
   }
+  
   public void setPreviousStandstill(StandStill prev)
   {
     m_prev = prev;
   }
   
-  public void setNextDeliveryOrder(OptaDeliveryOrder next)
+  public void setNextDestination(Destination next)
   {
     m_next = next;
   }
   
-  public OptaDeliveryOrder getNextDeliveryOrder()
+  public Destination getNextDestination()
   {
     return m_next;
   }
   
-  public void setDeliveryVehicle(OptaDeliveryVehicle vehicle)
+  public void setDeliveryVehicle(Vehicle vehicle)
   {
     m_deliveryVehicle = vehicle;
   }
-  public OptaDeliveryVehicle getDeliveryVehicle()
+  public Vehicle getDeliveryVehicle()
   {
     return m_deliveryVehicle;
   }
@@ -107,7 +108,7 @@ public class OptaDeliveryOrder implements StandStill
   
   public Location getLocation()
   {
-    return m_order.getLocation();
+    return m_location; //m_order.getLocation();
   }
   
   public double getDistanceToPrevOrder()

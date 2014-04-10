@@ -7,10 +7,14 @@ import com.openbusiness.app.SoftwareMode;
  
 import java.util.Random;
 import java.util.Properties;
+import java.util.ArrayList;
+import java.util.List;
  
-public class DeliveryVehicleFactory
+import com.openbusiness.opta.Vehicle; 
+ 
+public class VehicleFactory
 {
-  public static DeliveryVehicle[] generate(int mode, int amount, Properties prop)
+  public static List<Vehicle> generate(int mode, int amount, Properties prop)
   {
     if(mode == SoftwareMode.TEST)
       return generateTestSet();
@@ -21,9 +25,10 @@ public class DeliveryVehicleFactory
       return null;
   }
   
-  private static DeliveryVehicle[] generateRandomized(int amount, Properties prop)
+  private static List<Vehicle> generateRandomized(int amount, Properties prop)
   {
-    DeliveryVehicle [] vehicles = new DeliveryVehicle[amount];
+    List<Vehicle> vehicles = new ArrayList<Vehicle>();
+//    DeliveryVehicle [] vehicles = new DeliveryVehicle[amount];
     
     Random rand = new Random();
     
@@ -42,26 +47,28 @@ public class DeliveryVehicleFactory
     
     for(int i = 0; i < amount; i++)
     {
-      vehicles[i] = 
-          new DeliveryVehicle(fuelEfMin + fuelEfRange * rand.nextDouble(), // Fuel efficiency
+      vehicles.add( 
+          new Vehicle(fuelEfMin + fuelEfRange * rand.nextDouble(), // Fuel efficiency
       			      fuelCapMin + fuelCapRange * rand.nextDouble(), // Fuel capacity
 			      volMin + volRange * rand.nextDouble(), // Volume Capacity
 			      weightMin + weightRange * rand.nextDouble() // Weight Capacity
-			      );
+			      ));
     }
     
     return vehicles;
   }
   
-  private static DeliveryVehicle[] generateTestSet()
+  private static List<Vehicle> generateTestSet()
   {
     // TODO: Generate from file
+    return null; // TODO: Implement
+    /*
     DeliveryVehicle [] vehicles = new DeliveryVehicle[4];
     
     vehicles[0] = new DeliveryVehicle(17, 50, 7, 300);
     vehicles[1] = new DeliveryVehicle(12, 50, 10, 30);
     vehicles[2] = new DeliveryVehicle(5, 50, 20, 300);
     vehicles[3] = new DeliveryVehicle(3, 200, 25, 300);
-    return vehicles;
+    return vehicles; */
   }
 }

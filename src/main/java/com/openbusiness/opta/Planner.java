@@ -7,50 +7,113 @@ import org.optaplanner.core.config.solver.XmlSolverFactory;
 
 // OpenBusiness
 import com.openbusiness.gen.Location;
-import com.openbusiness.gen.DeliveryVehicle;
-import com.openbusiness.gen.DeliveryOrder;
 import com.openbusiness.gen.DeliverySchedule;
 import com.openbusiness.gen.DeliverySolution;
+import com.openbusiness.exceptions.UnrecognizedProblemException;
 
+// Time Windowed
+import com.openbusiness.opta.dbs.DBSPlannerSolution;
+import com.openbusiness.opta.dbs.DBSVehicle;
+import com.openbusiness.opta.dbs.DBSMotorBike;
+import com.openbusiness.opta.dbs.DBSVan;
+import com.openbusiness.opta.dbs.DBSBranch;
 
 // Java
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Properties;
+import java.util.Random;
+
 public class Planner
 {
-  public static DeliverySolution plan(DeliveryVehicle [] vehicles, DeliveryOrder [] orders)
+
+  public static DeliverySolution plan(List<Vehicle> vehicles, 
+  				      List<Destination> orders,
+				      Properties props) throws UnrecognizedProblemException
   {
     SolverFactory solverFactory = new XmlSolverFactory(
     	"/com/openbusiness/configuration/routePlannerConfig.xml");
     Solver solver = solverFactory.buildSolver();
     
+    
+    /* TODO: REFACTOR
+     * Get rid of local objects. Data will come through protocol, so
+     * no need for local domain objects.
+     */
     // Convert the objects
-    List<OptaDeliveryVehicle> optaVehicles = 
-    				new ArrayList<OptaDeliveryVehicle>();
-    List<OptaDeliveryOrder> optaOrders = 
-    				new ArrayList<OptaDeliveryOrder>();
+    List<Vehicle> optaVehicles = new ArrayList<Vehicle>();
+    List<Destination> optaOrders = new ArrayList<Destination>();
     List<Location> locationList = new ArrayList<Location>();
     
-    for( DeliveryVehicle vehicle : vehicles )
-      optaVehicles.add(new OptaDeliveryVehicle(vehicle));
+    RoutingPlannerSolution unsolved = null;
     
-    for( DeliveryOrder order : orders )
+    // Standard vehicle routing problem
+    if(props.getProperty("problem") == null ||
+    	props.getProperty("problem").equals("standard"))
     {
-      optaOrders.add(new OptaDeliveryOrder(order));
-      locationList.add(order.getLocation());
+       	unsolved = new RoutingPlannerSolution();
+	
+	optaVehicles = vehicles;
+	optaOrders   = orders;
+	
+       	for( Destination order : orders )
+       	{
+	   locationList.add(order.getLocation());
+       	}
     }
-    
-    // TODO: Set print as option, not as default
- //   System.out.println("Problem Size: " + optaVehicles.size() + 
-  //  		    " Vehicles, " + optaOrders.size() + 
-//		    " Orders, " + 1 + 
-//		    " Depots");
+       
+    // Time Windowed   
+    else if(props.getProperty("problem").equals("dbsmorning"))
+    {
+       	unsolved = new DBSPlannerSolution();
+       	Random rand = new Random();
+       	for( Vehicle vehicle : vehicles )
+       	{
+	 int randVehicleType = rand.nextInt();
 
+	 if( randVehicleType % 2 == 0 )
+           optaVehicles.add(new DBSVan(vehicle.getFuelEfficiency(),
+	   				vehicle.getFuelCapacity(),
+					vehicle.getVolumeCapacity(),
+					vehicle.getWeightCapacity()));
+	 else
+           optaVehicles.add(new DBSMotorBike(vehicle.getFuelEfficiency(),
+	   				vehicle.getFuelCapacity(),
+					vehicle.getVolumeCapacity(),
+					vehicle.getWeightCapacity()));
+
+       	}
+	
+	
+       	for( Destination order : orders )
+       	{
+	   int randOpenTime = rand.nextInt();
+	   int hour = 8;
+	   int minute = 0;
+	   
+	   if( randOpenTime % 3 == 0 )
+	     minute = 30;
+	   else if ( randOpenTime % 3 == 1 )
+	     minute = 45;
+	   
+	   optaOrders.add(new DBSBranch(order.getLocation(),
+	   				order.getVolume(),
+					order.getWeight(),
+	   				getTimeInMillis(hour,minute),
+					getTimeInMillis(9,0)
+					));
+	   locationList.add(order.getLocation());
+       	}
+    }
+    // Didn't recognize, exit.
+    else
+    	throw new UnrecognizedProblemException( props.getProperty("problem") );
     
-    RoutingPlannerSolution unsolved = new RoutingPlannerSolution();
+    // Now for actually solving the problem
     unsolved.setVehicleList(optaVehicles);
     unsolved.setOrderList(optaOrders);
     unsolved.setLocationList(locationList);
+    
     unsolved.generateDepot(); // Generate a depot
     
     // Solve the problem
@@ -62,23 +125,19 @@ public class Planner
     			 (RoutingPlannerSolution)solver.getBestSolution();
     System.out.println();
     
-    // TODO: Get the fuel used, the routes taken and assign to the DeliverySchedule
-    // objects. One for each vehicle.
-    //printResults(solved);
-    
     List<DeliverySchedule> deliverySchedules = new ArrayList<DeliverySchedule>();
-    List<OptaDeliveryVehicle> solvedVehicles = solved.getVehicleList();
+    List<Vehicle> solvedVehicles = solved.getVehicleList();
     for(int i = 0; i < solvedVehicles.size(); i++)
     { 
       deliverySchedules.add(
-      	new DeliverySchedule(solvedVehicles.get(i).getWrappedDeliveryVehicle()));
+      	new DeliverySchedule(solvedVehicles.get(i)));
       
-      OptaDeliveryOrder currentOrder =
-      				 solvedVehicles.get(i).getNextDeliveryOrder();
+      Destination currentOrder =
+      				 solvedVehicles.get(i).getNextDestination();
       while( currentOrder != null )
       {
-        deliverySchedules.get(i).addOrder( currentOrder.getWrappedDeliveryOrder());
-	currentOrder = currentOrder.getNextDeliveryOrder(); 
+        deliverySchedules.get(i).addOrder( currentOrder );
+	currentOrder = currentOrder.getNextDestination(); 
       }
       
       deliverySchedules.get(i).close();
@@ -93,33 +152,8 @@ public class Planner
     return deliverySolution;
   }
   
-  public static void printResults(RoutingPlannerSolution solved)
-  {    
-    List<OptaDeliveryVehicle> solvedVehicles = solved.getVehicleList();
-    
-    System.out.println("Final Score: " + solved.getScore());
-    double totalWeightCap = 0;
-    double totalVolCap = 0;
-    
-    for(int i = 0; i < solvedVehicles.size(); i++)
-    {
-      System.out.println("=================================================");
-      System.out.println(solvedVehicles.get(i));
-      System.out.println("\n");
-      totalWeightCap += solvedVehicles.get(i).getWeightCapacity();
-      totalVolCap += solvedVehicles.get(i).getVolumeCapacity();
-    }
-    
-    List<OptaDeliveryOrder> solvedOrders = solved.getOrderList();
-    double totalWeight = 0;
-    double totalVol = 0;
-    for(int i = 0; i < solvedOrders.size(); i++)
-    {
-       totalWeight += solvedOrders.get(i).getWeight();
-       totalVol += solvedOrders.get(i).getVolume();
-    }
-    System.out.println("Totals (Required/Available): \nWeight: ("+
-    			totalWeight + "/" + totalWeightCap + ")\nVolume: (" +
-			totalVol + "/" + totalVolCap + ")\n");
+  public static int getTimeInMillis(int hours, int minutes)
+  {
+     return (hours * 3600000) + (60000 * minutes);
   }
 }

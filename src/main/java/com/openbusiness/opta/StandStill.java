@@ -8,9 +8,9 @@ import com.openbusiness.gen.Location;
 public interface StandStill {
   
   Location getLocation();
-  OptaDeliveryVehicle getDeliveryVehicle();
+  Vehicle getDeliveryVehicle();
   
   @PlanningVariable(mappedBy = "previousStandstill")
-  OptaDeliveryOrder getNextDeliveryOrder();
-  void setNextDeliveryOrder(OptaDeliveryOrder order);
+  Destination getNextDestination();
+  void setNextDestination(Destination order);
 }

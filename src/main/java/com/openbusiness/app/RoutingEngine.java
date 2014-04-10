@@ -16,8 +16,10 @@ import java.io.FileInputStream;
 import java.util.List;
 import java.util.ArrayList;
 
+import com.openbusiness.opta.*;
 import com.openbusiness.gen.*;
 import com.openbusiness.exceptions.InvalidModeException;
+import com.openbusiness.exceptions.UnrecognizedProblemException;
 
 import com.openbusiness.opta.Planner;
  
@@ -41,11 +43,13 @@ public class RoutingEngine
     InputStream input = null;
     
     // Declaration of Objects
-    DeliveryOrder [] orders;
-    DeliveryVehicle [] vehicles;
+  //  DeliveryOrder [] orders;
+  //  DeliveryVehicle [] vehicles;
+    List<Vehicle> vehicles;
+    List<Destination> destinations;
     
     // Initialisation of Primitives
-    int numberOfOrders = 10;
+    int numberOfDestinations = 10;
     int numberOfVehicles = 4;
     
     
@@ -97,7 +101,7 @@ public class RoutingEngine
     try{
 	 // Read properties from the input data
 	 numberOfVehicles = Integer.parseInt( properties.getProperty("vehicles"));
-	 numberOfOrders = Integer.parseInt( properties.getProperty("orders"));
+	 numberOfDestinations = Integer.parseInt( properties.getProperty("orders"));
 
 	 // Setup the restrictions on delivery orders
 	 Location.init(Double.parseDouble(properties.getProperty("min_lat")),
@@ -121,23 +125,30 @@ public class RoutingEngine
      */
     
     // Generate according to the mode (Test is static from a file)
-    orders = DeliveryOrderFactory.generate(mode,numberOfOrders,properties);
-    vehicles = DeliveryVehicleFactory.generate(mode,numberOfVehicles,properties);
+    destinations = DestinationFactory.generate(mode,numberOfDestinations,properties);
+    vehicles = VehicleFactory.generate(mode,numberOfVehicles,properties);
     
-    // Now pass control to OptaPlanner
-    DeliverySolution solution = Planner.plan(vehicles,orders);
-    
-    // And output the object into JSON
-    JSONOutputWriter outputWriter = new JSONOutputWriter();
-    
-    // Write scores, fuel usage
-    outputWriter.writeData("hard_score", ""+solution.getHardScore());
-    outputWriter.writeData("soft_score", ""+solution.getSoftScore());
-    outputWriter.writeData("fuel_used", ""+solution.getFuelUsed());
-    outputWriter.writeData("distance_travelled", ""+solution.getDistanceTravelled());
-    outputWriter.writeDeliverySchedules( solution.getDeliverySchedulesAsArray() );
-    
-    outputWriter.print(System.out);
+    try{
+      // Now pass control to OptaPlanner
+      DeliverySolution solution = Planner.plan(vehicles,destinations,properties);
+
+      // And output the object into JSON
+      JSONOutputWriter outputWriter = new JSONOutputWriter();
+
+      // Write scores, fuel usage
+      outputWriter.writeData("hard_score", ""+solution.getHardScore());
+      outputWriter.writeData("soft_score", ""+solution.getSoftScore());
+      outputWriter.writeData("fuel_used", ""+solution.getFuelUsed());
+      outputWriter.writeData("distance_travelled", ""+solution.getDistanceTravelled());
+      outputWriter.writeDeliverySchedules( solution.getDeliverySchedulesAsArray(),
+      					   properties );
+
+      outputWriter.print(System.out);
+    }
+    catch(UnrecognizedProblemException e)
+    {
+      System.err.println(e);
+    }
   }
   
 }

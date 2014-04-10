@@ -2,6 +2,8 @@ package com.openbusiness.gen;
 
 import java.util.List;
 
+import com.openbusiness.opta.Destination;
+
 public class DeliverySolution
 {
    private int m_hard_score;
@@ -31,7 +33,7 @@ public class DeliverySolution
       {
 	double totalDistance = 0.0;
 	
-	List<DeliveryOrder> orderList = schedule.getOrderList();
+	List<Destination> orderList = schedule.getOrderList();
 	
 	for(int i = 0; i < orderList.size(); i++)
 	{

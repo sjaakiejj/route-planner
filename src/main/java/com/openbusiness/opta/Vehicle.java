@@ -8,13 +8,13 @@ import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
 
 // OpenBusiness
-import com.openbusiness.gen.DeliveryVehicle;
+//import com.openbusiness.gen.DeliveryVehicle;
 import com.openbusiness.gen.Location;
 
-public class OptaDeliveryVehicle implements StandStill
+public class Vehicle implements StandStill
 {
   // The immutable vehicle object
-  private DeliveryVehicle m_vehicle;
+  //private DeliveryVehicle m_vehicle;
   
   protected double m_volCapacity;
   protected double m_fuelCapacity;
@@ -22,28 +22,23 @@ public class OptaDeliveryVehicle implements StandStill
   protected double m_weightCapacity;
   
   protected Depot m_depot;
-  protected OptaDeliveryOrder m_nextOrder;
+  protected Destination m_nextDestination;
   
-  public OptaDeliveryVehicle()
+  public Vehicle()
   {
   }
   
-  public OptaDeliveryVehicle(DeliveryVehicle vehicle)
+  public Vehicle(double fuelEff, 
+  			 double fuelCap, 
+			 double volCap, 
+			 double weight)
   {
-    m_vehicle = vehicle;
-    
-    // Extract required data from the vehicle object
-    // to model the constraints
-    m_volCapacity = vehicle.getVolumeCapacity();
-    m_fuelCapacity = vehicle.getFuelCapacity();
-    m_fuelEfficiency = vehicle.getFuelEfficiency();
-    m_weightCapacity = vehicle.getWeightCapacity();
+    m_fuelEfficiency = fuelEff;
+    m_fuelCapacity = fuelCap;
+    m_volCapacity = volCap;
+    m_weightCapacity = weight;
   }
   
-  public DeliveryVehicle getWrappedDeliveryVehicle()
-  {
-    return m_vehicle;
-  }
   
   public void setDepot(Depot depot)
   {
@@ -75,19 +70,19 @@ public class OptaDeliveryVehicle implements StandStill
     return m_fuelCapacity;
   }
   
-  public OptaDeliveryVehicle getDeliveryVehicle()
+  public Vehicle getDeliveryVehicle()
   {
     return this;
   }
   
-  public OptaDeliveryOrder getNextDeliveryOrder()
+  public Destination getNextDestination()
   {
-    return m_nextOrder;
+    return m_nextDestination;
   }
   
-  public void setNextDeliveryOrder(OptaDeliveryOrder order)
+  public void setNextDestination(Destination dest)
   {
-    m_nextOrder = order;
+    m_nextDestination = dest;
   }
   
   public String toString()
@@ -98,7 +93,7 @@ public class OptaDeliveryVehicle implements StandStill
     							+ ", Fuel: " + getFuelCapacity() 
 							+ "], Efficiency: " + getFuelEfficiency()
 							+ "}\n";
-    OptaDeliveryOrder tmpOrder = getNextDeliveryOrder();
+    Destination tmpOrder = getNextDestination();
     if(tmpOrder == null)
       vehicleString += "[This vehicle has no deliveries to make]";
     else
@@ -109,7 +104,7 @@ public class OptaDeliveryVehicle implements StandStill
 	 vehicleString += "   " + tmpOrder + "\n";
 	 vehicleString += "       Distance prev order: " + tmpOrder.getDistanceToPrevOrder() + "\n";
 	 totalDistance += tmpOrder.getDistanceToPrevOrder();
-	 tmpOrder = tmpOrder.getNextDeliveryOrder();
+	 tmpOrder = tmpOrder.getNextDestination();
       }
       vehicleString += "-------------------------------------------------\n";
       vehicleString += "Total Distance Travelled: " + totalDistance;

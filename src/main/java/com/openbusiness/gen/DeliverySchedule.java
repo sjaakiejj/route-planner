@@ -3,24 +3,27 @@ package com.openbusiness.gen;
 import java.util.List;
 import java.util.ArrayList;
 
+import com.openbusiness.opta.Destination;
+import com.openbusiness.opta.Vehicle;
+
 // This class can alternatively store the data in
 // a map structure, with each vehicle being associated with a list of orders
 // internally. The sample's description was unclear as to which of these two
 // approaches is preferred. 
 public class DeliverySchedule
 {
-  private List<DeliveryOrder> m_orderList;
-  private DeliveryVehicle m_assignedVehicle;
+  private List<Destination> m_orderList;
+  private Vehicle m_assignedVehicle;
   
   private double m_total_volume;
   private double m_total_weight;
   private double m_total_distance;
   private double m_fuel_used;
   
-  public DeliverySchedule(DeliveryVehicle vehicle)
+  public DeliverySchedule(Vehicle vehicle)
   {
     m_assignedVehicle = vehicle;
-    m_orderList = new ArrayList<DeliveryOrder>();
+    m_orderList = new ArrayList<Destination>();
   }
   
   public void close()
@@ -28,17 +31,17 @@ public class DeliverySchedule
     _calcVariables();
   }
   
-  public void addOrder(DeliveryOrder order)
+  public void addOrder(Destination order)
   {
     m_orderList.add(order);
   }
   
-  public DeliveryVehicle getDeliveryVehicle()
+  public Vehicle getDeliveryVehicle()
   {
     return m_assignedVehicle;
   }
   
-  public List<DeliveryOrder> getOrderList()
+  public List<Destination> getOrderList()
   {
     return m_orderList;
   }

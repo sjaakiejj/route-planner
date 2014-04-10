@@ -5,7 +5,7 @@
   <solutionClass>com.openbusiness.opta.RoutingPlannerSolution</solutionClass>
   
   <!-- Establish planning entities -->
-  <planningEntityClass>com.openbusiness.opta.OptaDeliveryOrder</planningEntityClass>
+  <planningEntityClass>com.openbusiness.opta.Destination</planningEntityClass>
   <planningEntityClass>com.openbusiness.opta.StandStill</planningEntityClass>
 
   <scoreDirectorFactory>

@@ -11,9 +11,11 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Properties;
 
-public class DeliveryOrderFactory
+import com.openbusiness.opta.Destination;
+
+public class DestinationFactory
 {
-  public static DeliveryOrder[] generate(int mode, int amount, Properties prop)
+  public static List<Destination> generate(int mode, int amount, Properties prop)
   {
     if(mode == SoftwareMode.TEST)
       return generateTestSet();
@@ -23,11 +25,11 @@ public class DeliveryOrderFactory
       return null;
   }
   
-  private static DeliveryOrder[] generateRandomized(int amount,Properties prop)
+  private static List<Destination> generateRandomized(int amount,Properties prop)
   {
     // Randomly generate within the restrictions
     Random rand = new Random();
-    List<DeliveryOrder> deliveryOrders = new ArrayList<DeliveryOrder>();
+    List<Destination> destinations = new ArrayList<Destination>();
     
     double volMin = Double.parseDouble(prop.getProperty("order_vol_lower_bound"));
     double volRange = Double.parseDouble(prop.getProperty("order_vol_range"));
@@ -46,21 +48,21 @@ public class DeliveryOrderFactory
       vol = volMin + volRange * rand.nextDouble();
       weight = weightMin + weightRange * rand.nextDouble();
       
-      deliveryOrders.add(new DeliveryOrder(new Location(lon,lat),
+      destinations.add(new Destination(new Location(lon,lat),
       					   vol,weight));
     }
-    
-    return deliveryOrders.toArray(new DeliveryOrder[deliveryOrders.size()]);
+    return destinations;
+ //   return deliveryOrders.toArray(new DeliveryOrder[deliveryOrders.size()]);
   }
   
-  private static DeliveryOrder[] generateTestSet()
+  private static List<Destination> generateTestSet()
   {
    // String testFile = SoftwareSettings.get("testFile");
     
     // Open the file
     
     //
-    List<DeliveryOrder> deliveryOrders = new ArrayList<DeliveryOrder>();
+    List<Destination> deliveryOrders = new ArrayList<Destination>();
     
     // Read the values one by one
     //while
@@ -71,10 +73,10 @@ public class DeliveryOrderFactory
       lat = lon = vol = weight = i; 
       lat = Location.getMinLat() + (double)i / 10.0;
       lon = Location.getMinLon() - (double)i / 10.0;
-      deliveryOrders.add(new DeliveryOrder(new Location(lon,lat),
+      deliveryOrders.add(new Destination(new Location(lon,lat),
       					   vol,weight));
     }
-    
-    return deliveryOrders.toArray(new DeliveryOrder[deliveryOrders.size()]);
+    return deliveryOrders;
+    //return deliveryOrders.toArray(new DeliveryOrder[deliveryOrders.size()]);
   }
 }

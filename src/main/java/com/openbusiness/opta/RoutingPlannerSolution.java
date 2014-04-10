@@ -10,7 +10,7 @@ import org.optaplanner.core.impl.score.buildin.hardsoft.HardSoftScoreDefinition;
 import org.optaplanner.core.impl.solution.Solution;
 
 // OpenBusiness
-import com.openbusiness.gen.DeliveryOrder;
+//import com.openbusiness.gen.DeliveryOrder;
 import com.openbusiness.gen.Location;
 
 // Java
@@ -21,10 +21,10 @@ import java.util.Collection;
 @PlanningSolution
 public class RoutingPlannerSolution implements Solution<HardSoftScore>
 {
-  private List<OptaDeliveryVehicle> m_vehicleList;
-  private List<OptaDeliveryOrder>   m_orderList;
-  private List<Location> 	    m_locationList;
-  private List<Depot>		    m_depotList;
+  private List<Vehicle>       m_vehicleList;
+  private List<Destination>   m_orderList;
+  private List<Location>      m_locationList;
+  private List<Depot>	      m_depotList;
   
   private HardSoftScore m_score;
   
@@ -35,23 +35,23 @@ public class RoutingPlannerSolution implements Solution<HardSoftScore>
   
   @PlanningEntityCollectionProperty
   @ValueRangeProvider(id = "vehicleRange")
-  public List<OptaDeliveryVehicle> getVehicleList(){
+  public List<Vehicle> getVehicleList(){
     return m_vehicleList;
   }
   
-  public void setVehicleList(List<OptaDeliveryVehicle> vehicleList)
+  public void setVehicleList(List<Vehicle> vehicleList)
   {
     m_vehicleList = vehicleList;
   }
   
   @PlanningEntityCollectionProperty
   @ValueRangeProvider(id = "orderRange")
-  public List<OptaDeliveryOrder> getOrderList()
+  public List<Destination> getOrderList()
   {
     return m_orderList;
   }
   
-  public void setOrderList(List<OptaDeliveryOrder> orderList)
+  public void setOrderList(List<Destination> orderList)
   {
     m_orderList = orderList;
   }
@@ -77,7 +77,7 @@ public class RoutingPlannerSolution implements Solution<HardSoftScore>
     
     m_depotList.add(dpt);
     
-    for(OptaDeliveryVehicle v : m_vehicleList)
+    for(Vehicle v : m_vehicleList)
       v.setDepot(dpt);
   }
   

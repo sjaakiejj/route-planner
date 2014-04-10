@@ -16,6 +16,8 @@ var data_text;
 
 var background;
 
+var problem_type;
+
 function init()
 {
   stage = new Kinetic.Stage({
@@ -72,7 +74,7 @@ function init()
     
   background.src = 'singapore.png';
     
-    
+  problem_type = Session.get('properties')['problem'];
   
   ui_layer.add(stats);    
 
@@ -200,6 +202,22 @@ function visualise()
    
 }
 
+function milliToTime(milli)
+{
+   var hour =((milli/3600000 - 0.5).toFixed(0) % 24);
+   var min = ((milli/60000 - 0.5).toFixed(0) % 60);
+   
+   var str = hour + ":" + min;
+   
+   if(hour < 10)
+     str = "0" + str;
+   if(min % 10 == 0)
+     str += "0";
+   
+   
+   return str;
+}
+
 function createCallback(obj, ind, v)
 {
    return function(){
@@ -218,15 +236,24 @@ function createCallback(obj, ind, v)
 	  strokeWidth: 1
        });
        
+       var vehicleInfoText = 'Vehicle '  + ind + '\n\n'
+		     +'Fuel Efficiency: '+ v['fuel_efficiency'].toFixed(2) + '\n'
+		     +'Volume Carried: ' + v['volume_used'].toFixed(0) + '/' 
+		     			 + v['volume_capacity'].toFixed(0) + '\n'
+		     +'Weight Carried: ' + v['weight_used'].toFixed(0) + '/'
+		     			 + v['weight_capacity'].toFixed(0) + '\n'
+		     +'Fuel:   ' 	 + v['fuel_used'].toFixed(0) + '/' 
+		     			 + v['fuel_capacity'].toFixed(0);
+       if( problem_type == "dbsmorning" 
+       		|| problem_type == "dbsafternoon" )
+       {
+       }
+       
        // Add vehicle info into box
        data_text = new Kinetic.Text({
 		fontFamily: 'Calibry',
 		fontSize: 15,
-		text: 'Vehicle ' + ind + '\n\n'
-		     +'Fuel Efficiency: ' + v['fuel_efficiency'].toFixed(2) + '\n'
-		     +'Volume Carried: ' + v['volume_used'].toFixed(0) + '/' + v['volume_capacity'].toFixed(0) + '\n'
-		     +'Weight Carried: '  + v['weight_used'].toFixed(0) + '/' + v['weight_capacity'].toFixed(0) + '\n'
-		     +'Fuel:   '  + v['fuel_used'].toFixed(0) + '/' + v['fuel_capacity'].toFixed(0),
+		text: vehicleInfoText,
 		fill: 'black'});
        
        ui_layer.add(data_box);
@@ -245,11 +272,29 @@ function createCallback(obj, ind, v)
      }
      else if( obj == "Order" )
      {
+       
+       var orderInfoText =  'Order ' + ind + '\n\n'
+		    	   +'Weight: ' + v['weight'].toFixed(0) + '\n'
+		    	   +'Volume: ' + v['volume'].toFixed(0);
+			   
+       var box_height = 90;
+       if( problem_type == "dbsmorning" 
+       		|| problem_type == "dbsafternoon" )
+       {
+       
+          orderInfoText += '\nOpening Time: ' + milliToTime(v['opening_time'])
+	  		  +'\nLatest Pickup: ' + milliToTime(v['latest_pickup'])
+			  +'\nPicked up at: ' + milliToTime(v['picked_up']);
+			  
+	  // Make space for 3 lines
+	  box_height += 45;
+       }
+       
        data_box = new Kinetic.Rect({
      	  x: 100,
 	  y: 25,
-	  width: 150,
-	  height: 90,
+	  width: 170,
+	  height: box_height,
 	  fill: 'white',
 	  stroke: 'black',
 	  strokeWidth: 1
@@ -259,9 +304,7 @@ function createCallback(obj, ind, v)
        data_text = new Kinetic.Text({
 		fontFamily: 'Calibry',
 		fontSize: 15,
-		text: 'Order ' + ind + '\n\n'
-		     +'Weight: ' + v['weight'].toFixed(0) + '\n'
-		     +'Volume: ' + v['volume'].toFixed(0),
+		text: orderInfoText,
 		fill: 'black'});
        
        ui_layer.add(data_box);

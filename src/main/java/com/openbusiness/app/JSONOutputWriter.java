@@ -9,6 +9,10 @@ import java.util.List;
 import java.io.PrintStream;
 
 import com.openbusiness.gen.*;
+import com.openbusiness.opta.*;
+import com.openbusiness.opta.dbs.*;
+import com.openbusiness.opta.dbs.afternoon.*;
+import java.util.Properties;
 
 public class JSONOutputWriter
 {
@@ -20,11 +24,12 @@ public class JSONOutputWriter
     m_output_object = new JSONObject();
   }
   
-  public void writeDeliverySchedules(DeliverySchedule [] schedule)
+  public void writeDeliverySchedules(DeliverySchedule [] schedule,
+  				     Properties props)
   {
     for(int i = 0; i < schedule.length; i++)
     {
-      DeliveryVehicle vehicle = schedule[i].getDeliveryVehicle();
+      Vehicle vehicle = schedule[i].getDeliveryVehicle();
       
       JSONObject obj = new JSONObject();
       obj.put("fuel_efficiency", vehicle.getFuelEfficiency());
@@ -45,7 +50,7 @@ public class JSONOutputWriter
     {
       JSONArray deliveryOrdersArray = new JSONArray();
 
-      List<DeliveryOrder> deliveryOrderList = schedule[i].getOrderList();
+      List<Destination> deliveryOrderList = schedule[i].getOrderList();
       
       // Convert each object to key-value pairs
       for(int j = 0; j < deliveryOrderList.size(); j++)
@@ -56,6 +61,16 @@ public class JSONOutputWriter
 	obj.put("latitude", deliveryOrderList.get(j).getLocation().getLat());
 	obj.put("longitute", deliveryOrderList.get(j).getLocation().getLon());
 	obj.put("weight", deliveryOrderList.get(j).getWeight());
+	
+	if( props.getProperty("problem").equals("dbsmorning")
+		|| props.getProperty("problem").equals("dbsafternoon") )
+	{
+	   DBSBranch branch = (DBSBranch)deliveryOrderList.get(j);
+	   obj.put("opening_time", branch.getMilliReadyTime());
+	   obj.put("latest_pickup", branch.getMilliDueTime());
+	   obj.put("picked_up", branch.getMilliArrivalTime());
+	}
+	
 	deliveryOrdersArray.add(obj);
       }
       
