@@ -43,6 +43,11 @@ public class JSONOutputWriter
       obj.put("fuel_used", schedule[i].getFuelUsed());
       
       
+      if( props.getProperty("problem").equals("dbsmorning")
+     	     || props.getProperty("problem").equals("dbsafternoon") )
+      {
+        obj.put("type", ((DBSVehicle)vehicle).getVehicleType());
+      }
       m_output_object.put("Vehicle_"+i,obj);
     }
     

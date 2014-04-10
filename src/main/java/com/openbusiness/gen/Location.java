@@ -38,6 +38,16 @@ public class Location
     return m_min_lon;
   }
   
+  public static Location getCenter()
+  {
+    double lon = getMinLon() + 
+    			(getMaxLon() - getMinLon()) / 2; 
+    double lat = getMinLat() + 
+    			(getMaxLat() - getMinLat()) / 2; 
+			
+    return new Location(lon,lat);
+  }
+  
   // ***************************************************************************
   // Instance Methods
   // ***************************************************************************

@@ -207,12 +207,14 @@ function milliToTime(milli)
    var hour =((milli/3600000 - 0.5).toFixed(0) % 24);
    var min = ((milli/60000 - 0.5).toFixed(0) % 60);
    
-   var str = hour + ":" + min;
    
    if(hour < 10)
-     str = "0" + str;
-   if(min % 10 == 0)
-     str += "0";
+     hour = "0" + hour;
+   if(min < 10)
+     min = "0" + min;
+
+   var str = hour + ":" + min;
+   //  str += "0";
    
    
    return str;
@@ -236,19 +238,35 @@ function createCallback(obj, ind, v)
 	  strokeWidth: 1
        });
        
-       var vehicleInfoText = 'Vehicle '  + ind + '\n\n'
-		     +'Fuel Efficiency: '+ v['fuel_efficiency'].toFixed(2) + '\n'
-		     +'Volume Carried: ' + v['volume_used'].toFixed(0) + '/' 
-		     			 + v['volume_capacity'].toFixed(0) + '\n'
-		     +'Weight Carried: ' + v['weight_used'].toFixed(0) + '/'
-		     			 + v['weight_capacity'].toFixed(0) + '\n'
-		     +'Fuel:   ' 	 + v['fuel_used'].toFixed(0) + '/' 
-		     			 + v['fuel_capacity'].toFixed(0);
+       var volumeCap = v['volume_capacity'].toFixed(0);
+       var weightCap = v['weight_capacity'].toFixed(0);
+       var fuelCap   = v['fuel_capacity'].toFixed(0);
+       
+       if(volumeCap > 999999)
+         volumeCap = "∞";
+       if(weightCap > 999999)
+         weightCap = "∞";
+       if(fuelCap > 999999)
+         fuelCap = "∞";
+       
+       var vehicle_type = "";
+					 
        if( problem_type == "dbsmorning" 
        		|| problem_type == "dbsafternoon" )
        {
+         vehicle_type = ": " + v['type'];
        }
        
+       
+       var vehicleInfoText = 'Vehicle '  + ind + vehicle_type + '\n\n'
+		     +'Fuel Efficiency: '+ v['fuel_efficiency'].toFixed(2) + '\n'
+		     +'Volume Carried: ' + v['volume_used'].toFixed(0) + '/' 
+		     			 + volumeCap + '\n'
+		     +'Weight Carried: ' + v['weight_used'].toFixed(0) + '/'
+		     			 + weightCap + '\n'
+		     +'Fuel:   ' 	 + v['fuel_used'].toFixed(0) + '/' 
+		     			 + fuelCap;
+					 
        // Add vehicle info into box
        data_text = new Kinetic.Text({
 		fontFamily: 'Calibry',
@@ -278,6 +296,7 @@ function createCallback(obj, ind, v)
 		    	   +'Volume: ' + v['volume'].toFixed(0);
 			   
        var box_height = 90;
+       var box_width = 120;
        if( problem_type == "dbsmorning" 
        		|| problem_type == "dbsafternoon" )
        {
@@ -288,17 +307,19 @@ function createCallback(obj, ind, v)
 			  
 	  // Make space for 3 lines
 	  box_height += 45;
+	  box_width  += 60;
        }
        
        data_box = new Kinetic.Rect({
      	  x: 100,
 	  y: 25,
-	  width: 170,
+	  width: box_width,
 	  height: box_height,
 	  fill: 'white',
 	  stroke: 'black',
 	  strokeWidth: 1
        });
+       
        
        // Add order info into box
        data_text = new Kinetic.Text({
@@ -309,9 +330,22 @@ function createCallback(obj, ind, v)
        
        ui_layer.add(data_box);
        ui_layer.add(data_text);
+       
        stage.on('mousemove', function(){ 
+       		//var coord = toCoord( orders[index].latitude, orders[index].longitute );
        		var x = stage.getPointerPosition().x + 10;
 		var y = stage.getPointerPosition().y + 10;
+		
+		if(data_box.getWidth() + x > canvas_width)
+		{
+		   x = x - 20 - data_box.getWidth();
+		}
+		
+		if(data_box.getHeight() + y > canvas_height)
+		{
+		   y = y - 20 - data_box.getHeight();
+		}
+		
        		data_text.setX(x + 10);
 		data_text.setY(y + 10);
        		data_box.setX(x);
@@ -360,6 +394,16 @@ function createCircleHitFunc(coord)
 	  context.fillStrokeShape(this);
 	  
    }
+}
+
+// This function was taken from StackOverflow, written by Anatoliy
+function getRandomColor() {
+    var letters = '0123456789ABCDEF'.split('');
+    var color = '#';
+    for (var i = 0; i < 6; i++ ) {
+        color += letters[Math.round(Math.random() * 15)];
+    }
+    return color;
 }
 
 function kineticVisualise()
@@ -438,7 +482,7 @@ function kineticVisualise()
     
     var line = new Kinetic.Line({
     	points: line_points,
-	stroke: colors[id],
+	stroke: getRandomColor(),
 	strokeWidth: 2,
 	hitFunc: createStrokeHitFunc(line_points)
     });
@@ -477,6 +521,7 @@ function kineticVisualise()
        
        var orders = json["Vehicle_"+id+"_order"];
        circle.on('mouseover', createCallback("Order", i/2, orders[i/2-1]));
+       circle.on('mouseout', createCallback("Nothing",""));
        layer.add(circle);
      }
      

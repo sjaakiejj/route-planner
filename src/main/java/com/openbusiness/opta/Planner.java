@@ -17,6 +17,7 @@ import com.openbusiness.opta.dbs.DBSVehicle;
 import com.openbusiness.opta.dbs.DBSMotorBike;
 import com.openbusiness.opta.dbs.DBSVan;
 import com.openbusiness.opta.dbs.DBSBranch;
+import com.openbusiness.opta.dbs.DBSDepot;
 
 // Java
 import java.util.List;
@@ -44,14 +45,19 @@ public class Planner
     List<Vehicle> optaVehicles = new ArrayList<Vehicle>();
     List<Destination> optaOrders = new ArrayList<Destination>();
     List<Location> locationList = new ArrayList<Location>();
+    List<Depot> depotList = new ArrayList<Depot>();
     
     RoutingPlannerSolution unsolved = null;
+    Depot depot = null;
     
     // Standard vehicle routing problem
     if(props.getProperty("problem") == null ||
     	props.getProperty("problem").equals("standard"))
     {
        	unsolved = new RoutingPlannerSolution();
+	
+	depot = new Depot();
+	depot.setLocation(Location.getCenter());
 	
 	optaVehicles = vehicles;
 	optaOrders   = orders;
@@ -65,8 +71,19 @@ public class Planner
     // Time Windowed   
     else if(props.getProperty("problem").equals("dbsmorning"))
     {
-       	unsolved = new DBSPlannerSolution();
+    	// Variable Requirements
        	Random rand = new Random();
+	
+	// Opta Planner
+       	unsolved = new DBSPlannerSolution();
+	
+	// Dependencies
+	DBSDepot dbsDepot = new DBSDepot();
+	dbsDepot.setLocation(Location.getCenter());
+	dbsDepot.setMilliDueTime(getTimeInMillis(10,0));
+	dbsDepot.setMilliReadyTime(getTimeInMillis(8,0));
+	depot = dbsDepot;
+	
        	for( Vehicle vehicle : vehicles )
        	{
 	 int randVehicleType = rand.nextInt();
@@ -109,13 +126,16 @@ public class Planner
     else
     	throw new UnrecognizedProblemException( props.getProperty("problem") );
     
-    // Now for actually solving the problem
+    // Setup the depot
+    for(Vehicle v : optaVehicles)
+    	v.setDepot(depot);
+    
+    // Add the objects into the solution
     unsolved.setVehicleList(optaVehicles);
     unsolved.setOrderList(optaOrders);
     unsolved.setLocationList(locationList);
-    
-    unsolved.generateDepot(); // Generate a depot
-    
+    unsolved.setDepotList(depotList);   
+ 
     // Solve the problem
     solver.setPlanningProblem( unsolved );
     solver.solve();

@@ -50,6 +50,7 @@ public class ArrivalTimeUpdatingVariableListener implements PlanningVariableList
             milliDepartureTime = shadowDeliveryOrder.getDepartureTime();
             shadowDeliveryOrder = shadowDeliveryOrder.getNextDestination();
             milliArrivalTime = calculateMilliArrivalTime(shadowDeliveryOrder, milliDepartureTime);
+	    
         }
     }
 
@@ -57,11 +58,15 @@ public class ArrivalTimeUpdatingVariableListener implements PlanningVariableList
         if (customer == null) {
             return null;
         }
+	double distToPrevOrderInKm = customer.getDistanceToPrevOrder();
+	double distToPrevOrderInHr = distToPrevOrderInKm / 60.0;
+	int distToPrevOrderInMillis = (int)(distToPrevOrderInHr * 3600000);
+	
         if (previousMilliDepartureTime == null) {
             // PreviousStandStill is the Vehicle, so we leave from the Depot at the best suitable time
-            return (int)Math.max(customer.getMilliReadyTime(), customer.getDistanceToPrevOrder());
+            return (int)Math.max(customer.getMilliReadyTime(), distToPrevOrderInMillis);
         }
-        return (int)(previousMilliDepartureTime + customer.getDistanceToPrevOrder());
+        return (int)(previousMilliDepartureTime + distToPrevOrderInMillis);
     }
 
 }

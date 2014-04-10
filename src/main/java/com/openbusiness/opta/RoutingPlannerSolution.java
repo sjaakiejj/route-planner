@@ -63,6 +63,7 @@ public class RoutingPlannerSolution implements Solution<HardSoftScore>
   
   public void generateDepot()
   {
+  /*
     // only generate a depot if we have none
     if(m_depotList.size() != 0)
       return;
@@ -79,6 +80,17 @@ public class RoutingPlannerSolution implements Solution<HardSoftScore>
     
     for(Vehicle v : m_vehicleList)
       v.setDepot(dpt);
+    */
+  }
+  
+  public void setDepotList(List<Depot> depotList)
+  {
+    m_depotList = depotList;
+  }
+  
+  public List<Depot> getDepotList()
+  {
+    return m_depotList;
   }
   
   public void setScore(HardSoftScore score)
