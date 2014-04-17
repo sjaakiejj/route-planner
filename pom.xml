@@ -56,7 +56,7 @@
 	<configuration>
 	  <archive>
 	    <manifest>
-              <mainClass>com.openbusiness.app.RoutingEngine</mainClass>
+              <mainClass>com.openbusiness.app.App</mainClass>
 	    </manifest>
 	  </archive>
 	  <descriptorRefs>
@@ -82,7 +82,64 @@
 	<artifactId>json-simple</artifactId>
 	<version>1.1.1</version>
     </dependency>
+    
+    <!-- Spring Framework + AMQP-->     
+    <dependency>
+         <groupId>org.springframework.amqp</groupId>
+         <artifactId>spring-amqp</artifactId>
+         <version>1.3.0.RELEASE</version>
+         <exclusions>
+            <exclusion>
+               <groupId>com.sun.jmx</groupId>
+               <artifactId>jmxri</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.amqp</groupId>
+         <artifactId>spring-rabbit</artifactId>
+         <version>1.3.0.RELEASE</version>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework.amqp</groupId>
+         <artifactId>spring-erlang</artifactId>
+         <version>1.3.0.RELEASE</version>
+      </dependency>
+      <dependency>
+         <groupId>com.rabbitmq</groupId>
+         <artifactId>amqp-client</artifactId>
+         <version>3.3.0</version>
+      </dependency>
+      <dependency>
+	<groupId>org.springframework.retry</groupId>
+	<artifactId>spring-retry</artifactId>
+	<version>1.0.3.RELEASE</version>
+      </dependency>
             
+      <!--   
+    <dependency>
+	<groupId>org.springframework</groupId>
+	<artifactId>spring-context</artifactId>
+	<version>4.0.3.RELEASE</version>
+    </dependency>
+    
+    <dependency>
+	<groupId>org.springframework</groupId>
+	<artifactId>spring-beans</artifactId>
+	<version>4.0.3.RELEASE</version>
+    </dependency>
+            
+    <dependency>
+	<groupId>org.springframework.amqp</groupId>
+	<artifactId>spring-amqp</artifactId>
+	<version>1.3.0.RELEASE</version>
+    </dependency>
+    <dependency>
+	<groupId>org.springframework.amqp</groupId>
+	<artifactId>spring-rabbit</artifactId>
+	<version>1.3.0.RELEASE</version>
+    </dependency>
+            -->
             
     <dependency>
       <groupId>junit</groupId>
