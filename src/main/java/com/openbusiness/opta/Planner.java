@@ -27,15 +27,28 @@ import java.util.Random;
 
 public class Planner
 {
+  private Solver m_solver;
+  
+  public Planner()
+  {
+    m_solver = null;
+  }
+  
+  public void terminate()
+  {
+    System.out.println("Terminating now...");
+    m_solver.terminateEarly();
+  }
 
-  public static DeliverySolution plan(List<Vehicle> vehicles, 
+
+  public DeliverySolution plan(List<Vehicle> vehicles, 
   				      List<Destination> orders,
 				      Properties props) throws UnrecognizedProblemException
   {
     SolverFactory solverFactory = new XmlSolverFactory(
     	"/com/openbusiness/configuration/routePlannerConfig.xml");
     Solver solver = solverFactory.buildSolver();
-    
+    m_solver = solver;
     
     /* TODO: REFACTOR
      * Get rid of local objects. Data will come through protocol, so
@@ -47,6 +60,8 @@ public class Planner
     List<Location> locationList = new ArrayList<Location>();
     List<Depot> depotList = new ArrayList<Depot>();
     
+    
+    Location depotLocation = Location.getCenter();
     RoutingPlannerSolution unsolved = null;
     Depot depot = null;
     
@@ -77,12 +92,12 @@ public class Planner
 	// Opta Planner
        	unsolved = new DBSPlannerSolution();
 	
-	// Dependencies
-	DBSDepot dbsDepot = new DBSDepot();
-	dbsDepot.setLocation(Location.getCenter());
-	dbsDepot.setMilliDueTime(getTimeInMillis(10,0));
-	dbsDepot.setMilliReadyTime(getTimeInMillis(8,0));
-	depot = dbsDepot;
+        // Dependencies
+        DBSDepot dbsDepot = new DBSDepot();
+        dbsDepot.setLocation(Location.getCenter());
+        dbsDepot.setMilliDueTime(getTimeInMillis(10,0));
+        dbsDepot.setMilliReadyTime(getTimeInMillis(8,0));
+        depot = dbsDepot;
 	
        	for( Vehicle vehicle : vehicles )
        	{
@@ -101,31 +116,47 @@ public class Planner
 
        	}
 	
+	float avgLat = 0.f;
+	float avgLon = 0.f;
 	
        	for( Destination order : orders )
        	{
-	   int randOpenTime = rand.nextInt();
-	   int hour = 8;
-	   int minute = 0;
 	   
-	   if( randOpenTime % 3 == 0 )
-	     minute = 30;
-	   else if ( randOpenTime % 3 == 1 )
-	     minute = 45;
-	   
-	   optaOrders.add(new DBSBranch(order.getLocation(),
-	   				order.getVolume(),
-					order.getWeight(),
-	   				getTimeInMillis(hour,minute),
-					getTimeInMillis(9,0)
+	   if( order instanceof DBSBranch )
+	   {
+	     optaOrders.add(order);
+	     Location loc = order.getLocation();
+	     avgLat += loc.getLat();
+	     avgLon += loc.getLon();
+	   }
+	   else
+	   {
+	     int randOpenTime = rand.nextInt();
+	     int hour = 8;
+	     int minute = 0;
+
+	     if( randOpenTime % 3 == 0 )
+	       minute = 30;
+	     else if ( randOpenTime % 3 == 1 )
+	       minute = 45;
+	     optaOrders.add(new DBSBranch(order.getLocation(),
+	   				  order.getVolume(),
+				  	  order.getWeight(),
+	   				  getTimeInMillis(hour,minute),
+					  getTimeInMillis(9,0)
 					));
+	   }
 	   locationList.add(order.getLocation());
        	}
+	
+	if(avgLat != 0.f && avgLon != 0.f)
+	  depot.setLocation( new Location(avgLon / orders.size(), avgLat / orders.size()) );
     }
     // Didn't recognize, exit.
     else
     	throw new UnrecognizedProblemException( props.getProperty("problem") );
     
+
     // Setup the depot
     for(Vehicle v : optaVehicles)
     	v.setDepot(depot);
@@ -138,11 +169,21 @@ public class Planner
  
     // Solve the problem
     solver.setPlanningProblem( unsolved );
+    
+    m_solver = solver;
+    
     solver.solve();
     
+    return getBestSolution();
+  }
+  
+  public DeliverySolution getBestSolution()
+  {
+    if( m_solver == null )
+      return null;
     // Solution - convert to DeliverySchedule objects
     RoutingPlannerSolution solved =
-    			 (RoutingPlannerSolution)solver.getBestSolution();
+    			 (RoutingPlannerSolution)m_solver.getBestSolution();
     System.out.println();
     
     List<DeliverySchedule> deliverySchedules = new ArrayList<DeliverySchedule>();
@@ -163,13 +204,9 @@ public class Planner
       deliverySchedules.get(i).close();
     }
     
-    DeliverySolution deliverySolution = new DeliverySolution(
-    					solved.getScore().getHardScore(),
-					solved.getScore().getSoftScore(),
-					deliverySchedules);
-					
-    
-    return deliverySolution;
+    return new DeliverySolution(solved.getScore().getHardScore(),
+				solved.getScore().getSoftScore(),
+				deliverySchedules);
   }
   
   public static int getTimeInMillis(int hours, int minutes)

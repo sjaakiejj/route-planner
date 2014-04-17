@@ -15,54 +15,153 @@ import java.io.InputStream;
 import java.io.FileInputStream;
 import java.util.List;
 import java.util.ArrayList;
+import java.lang.Thread;
 
 import com.openbusiness.opta.*;
 import com.openbusiness.gen.*;
+import com.openbusiness.gen.dbs.*;
 import com.openbusiness.exceptions.InvalidModeException;
 import com.openbusiness.exceptions.UnrecognizedProblemException;
 
 import com.openbusiness.opta.Planner;
  
-public class RoutingEngine
+public class RoutingEngine extends Thread
 {
-
+  private Properties m_properties;
+  private int m_number_vehicles;
+  private int m_number_destinations;
+  private int m_mode;
+  private boolean m_running;
+  private DeliverySolution m_schedule;
+  private Planner m_planner;
+  private boolean m_read_orders_from_file;
+  
+  private String m_exit_error;
+  
+  public RoutingEngine()
+  {
+     m_schedule = null;
+     m_running = false;
+     m_mode = SoftwareMode.DEMO;
+     m_planner = new Planner();
+     m_read_orders_from_file = true;
+     m_exit_error = "";
+  }
+  
+  public String getErrorMessage()
+  { 
+     return m_exit_error;
+  }
+  
+  public boolean propertiesSet()
+  {
+     return m_properties != null;
+  }
+  
+  public boolean running()
+  {
+     return m_running;
+  }
  /*
   * Entry Point 
   */
-  public static void main(String [] args)
+  public void defaultSetup(List<String> args)
   {
-    /* 
-     * Variable Declaration and Initialisation
+    // Properties properties = null;
+  
+     if(args.contains("-json"))
+        loadPropertiesFromFile("json",args.get(args.indexOf("-json")+1));
+     else
+        loadPropertiesFromFile("prop", "/tmp/config.prop");
+	
+     
+     initialiseVariables();
+     
+  }
+  
+  public void apiSetup()
+  {
+     initialiseVariables();
+     //DeliverySolution solution = start();
+     m_running = false;
+  }
+  
+  public void run()
+  {
+    List<Vehicle> vehicles;
+    List<Destination> destinations = new ArrayList<Destination>();
+    /*
+     * Setup graphical interface
      */
-
-    // App Settings (Test or Demo)
-    int mode = SoftwareMode.TEST;
-    Properties properties = new Properties();
     
+    System.out.println(m_mode + " ::: " + m_number_destinations + " ::: ");
+    // Generate according to the mode (Test is static from a file)
+    
+    try{
+       // Read from file or generate randomly
+       if( (m_properties.getProperty("problem").equals("dbsmorning") 
+    	   || m_properties.getProperty("problem").equals("dbsafternoon"))
+    	   && m_read_orders_from_file )
+       {
+	 destinations = DBSBranchFactory.generateFromFile("dbs_branches.csv", m_properties);
+       }
+       else
+	 destinations = DestinationFactory.generate(m_mode,m_number_destinations, m_properties);
+       
+       // Start the algorithm
+       System.out.println("Mode: " + m_mode);
+       System.out.println("NoVehicles: " + m_number_vehicles);
+       System.out.println("Properties: " + m_properties);
+       vehicles = VehicleFactory.generate(m_mode,m_number_vehicles, m_properties);
+       
+       System.out.println(vehicles.size() + " vehicles generated");	
+       m_running = true;
+       m_schedule = m_planner.plan(vehicles,destinations, m_properties);
+       m_running = false;
+    } 
+    catch(Exception e){
+       m_exit_error = "Exception in RoutingEngine.run: " + e;
+    }
+  }
+  
+  public void terminateEarly()
+  {
+     m_planner.terminate();
+  }
+  
+  public String getBestSolutionJSON()
+  {
+     DeliverySolution solution = m_planner.getBestSolution();
+     
+     if(solution == null)
+       return null;
+     
+     return solutionToJSON(solution,m_properties);
+  }
+  
+  public void loadPropertiesFromString(String jsonString)
+  {
+     try{
+       m_properties = JSONPropertyReader.load(jsonString);
+     }
+     catch(Exception e)
+     {
+       e.printStackTrace();
+     }
+  }
+  
+  public void loadPropertiesFromFile(String type, String fileName)
+  {
     // Initialisation of Streaming Objects
     InputStream input = null;
-    
-    // Declaration of Objects
-  //  DeliveryOrder [] orders;
-  //  DeliveryVehicle [] vehicles;
-    List<Vehicle> vehicles;
-    List<Destination> destinations;
-    
-    // Initialisation of Primitives
-    int numberOfDestinations = 10;
-    int numberOfVehicles = 4;
-    
-    
-    /*
-     * Configuration 
-     */
-    // TODO: Construct a map of input args
-    // JSON
-    if(args.length > 1 && args[0].equals("-json"))
+   // Properties properties = null;
+   
+    m_properties = new Properties();
+    if(type.equals("json"))
     {
       try{
-        input = new FileInputStream(args[1]);
-	properties = JSONPropertyReader.load(input);
+        input = new FileInputStream(fileName);
+	m_properties = JSONPropertyReader.load(input);
       }
       catch(IOException ex){
         
@@ -79,7 +178,7 @@ public class RoutingEngine
        try{
 	 // Open the file and load it as a properties-formatted file
 	 input = new FileInputStream("/tmp/config.prop");
-	 properties.load(input);
+	 m_properties.load(input);
        }
        catch (IOException ex){
 	 ex.printStackTrace();
@@ -96,42 +195,34 @@ public class RoutingEngine
        }
     }
     
-    
-    // Use the properties
-    try{
-	 // Read properties from the input data
-	 numberOfVehicles = Integer.parseInt( properties.getProperty("vehicles"));
-	 numberOfDestinations = Integer.parseInt( properties.getProperty("orders"));
+   // return properties;
+  }
+  
+  public void initialiseVariables()
+  {
 
-	 // Setup the restrictions on delivery orders
-	 Location.init(Double.parseDouble(properties.getProperty("min_lat")),
-      			    Double.parseDouble(properties.getProperty("max_lat")),
-			    Double.parseDouble(properties.getProperty("min_lon")),
-			    Double.parseDouble(properties.getProperty("max_lon"))
-			   );
+    // Read properties from the input data
+    m_number_vehicles = Integer.parseInt( m_properties.getProperty("vehicles"));
+    
+    if( m_properties.getProperty("orders") == null )
+      m_number_destinations = 30; // default to 30
+    else
+      m_number_destinations = Integer.parseInt( m_properties.getProperty("orders"));
 
-	 // Are we in test or demo mode?
-	 if( properties.getProperty("mode").toUpperCase().equals("TEST") )
-            mode = SoftwareMode.TEST;
-	 else if( properties.getProperty("mode").toUpperCase().equals("DEMO") )
-            mode = SoftwareMode.DEMO;
-	 else
-            throw new InvalidModeException(properties.getProperty("mode"));
-    } catch(InvalidModeException ex) {
-    }    
-    
-    /*
-     * Setup graphical interface
-     */
-    
-    // Generate according to the mode (Test is static from a file)
-    destinations = DestinationFactory.generate(mode,numberOfDestinations,properties);
-    vehicles = VehicleFactory.generate(mode,numberOfVehicles,properties);
-    
-    try{
-      // Now pass control to OptaPlanner
-      DeliverySolution solution = Planner.plan(vehicles,destinations,properties);
-
+    // Setup the restrictions on delivery orders
+    if( m_properties.getProperty("problem").equals("standard") )
+    {
+         Location.init(Double.parseDouble(m_properties.getProperty("min_lat")),
+      		       Double.parseDouble(m_properties.getProperty("max_lat")),
+		       Double.parseDouble(m_properties.getProperty("min_lon")),
+		       Double.parseDouble(m_properties.getProperty("max_lon"))
+		      );    
+    }
+  }
+  
+  public static String solutionToJSON(DeliverySolution solution, Properties props)
+  {
+  
       // And output the object into JSON
       JSONOutputWriter outputWriter = new JSONOutputWriter();
 
@@ -141,14 +232,13 @@ public class RoutingEngine
       outputWriter.writeData("fuel_used", ""+solution.getFuelUsed());
       outputWriter.writeData("distance_travelled", ""+solution.getDistanceTravelled());
       outputWriter.writeDeliverySchedules( solution.getDeliverySchedulesAsArray(),
-      					   properties );
-
-      outputWriter.print(System.out);
-    }
-    catch(UnrecognizedProblemException e)
-    {
-      System.err.println(e);
-    }
+      					   props );
+      return outputWriter.getString();
+  }
+  
+  public static void printSolution(DeliverySolution solution, Properties props)
+  {
+      System.out.println( solutionToJSON(solution,props) );
   }
   
 }

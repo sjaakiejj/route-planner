@@ -13,6 +13,21 @@ import java.io.StringWriter;
 
 public class JSONPropertyReader
 {
+  public static Properties load(String input) throws Exception
+  {
+    JSONParser parser = new JSONParser();
+    
+    Properties prop = new Properties();
+
+    JSONObject obj = (JSONObject)parser.parse(input);
+     
+    for( Object key : obj.keySet() ){
+       prop.setProperty((String)key, (String)obj.get(key));
+    }
+    
+    return prop;
+  }
+
   public static Properties load(InputStream input) throws Exception
   {
     // Convert the input stream to a string

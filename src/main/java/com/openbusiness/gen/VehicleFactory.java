@@ -32,9 +32,19 @@ public class VehicleFactory
     
     Random rand = new Random();
     
-    // TODO: These should be taken from the config file instead
-    double fuelEfRange = Double.parseDouble(prop.getProperty("fuel_efficiency_range"));   
-    double fuelEfMin = Double.parseDouble(prop.getProperty("fuel_efficiency_lower_bound"));
+    double fuelEfRange;
+    double fuelEfMin;
+    
+    if( prop.getProperty("problem").equals("standard") )
+    { 
+      fuelEfRange = Double.parseDouble(prop.getProperty("fuel_efficiency_range"));   
+      fuelEfMin   = Double.parseDouble(prop.getProperty("fuel_efficiency_lower_bound"));
+    }
+    else
+    {
+      fuelEfRange = 2;
+      fuelEfMin   = 0;
+    }
     
     double fuelCapRange = Double.parseDouble(prop.getProperty("fuel_capacity_range")); 
     double fuelCapMin = Double.parseDouble(prop.getProperty("fuel_capacity_lower_bound"));

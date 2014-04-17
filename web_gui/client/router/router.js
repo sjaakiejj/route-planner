@@ -8,4 +8,8 @@ Router.map(function(){
   	path:'/Visualise',
 	layoutTemplate: 'layout'
   });
+  this.route('dist_mat', {
+  	path:'/DistMat',
+	layoutTemplate: 'layout'
+  });
 });

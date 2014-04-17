@@ -11,13 +11,14 @@
   
   <div>
   <h3>List of orders</h3>
-    <table> <tr><th>Order</th><th>Latitude</th><th>Longitude</th><th>Volume</th><th>Weight</th></tr>
+    <table> <tr><th>Order</th><th>Latitude</th><th>Longitude</th><th>Volume</th><th>Weight</th><th>Distance To Previous</th></tr>
       {{#each deliveryOrder}}
     <tr><td>{{order}}</td>
         <td>{{decimal latitude}}</td>
 	<td>{{decimal longitute}}</td>
     	<td>{{decimal volume}}</td>
-	<td>{{decimal weight}}</td></tr>
+	<td>{{decimal weight}}</td>
+	<td>{{decimal distanceToPrev}}</td></tr>
       {{/each}}
     </table>
   </div>

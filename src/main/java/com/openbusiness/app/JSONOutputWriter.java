@@ -64,8 +64,10 @@ public class JSONOutputWriter
 	obj.put("order", j);
 	obj.put("volume", deliveryOrderList.get(j).getVolume());
 	obj.put("latitude", deliveryOrderList.get(j).getLocation().getLat());
+	obj.put("longitude", deliveryOrderList.get(j).getLocation().getLon());
 	obj.put("longitute", deliveryOrderList.get(j).getLocation().getLon());
 	obj.put("weight", deliveryOrderList.get(j).getWeight());
+	obj.put("distanceToPrev", deliveryOrderList.get(j).getDistanceToPrevOrder());
 	
 	if( props.getProperty("problem").equals("dbsmorning")
 		|| props.getProperty("problem").equals("dbsafternoon") )
@@ -87,6 +89,11 @@ public class JSONOutputWriter
   public void writeData(String name, String value)
   {
     m_output_object.put(name,value);
+  }
+  
+  public String getString()
+  {
+    return "" + m_output_object;
   }
   
   public void print(PrintStream out)

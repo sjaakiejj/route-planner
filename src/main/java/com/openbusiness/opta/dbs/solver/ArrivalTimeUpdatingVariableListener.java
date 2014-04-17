@@ -6,6 +6,7 @@ import org.optaplanner.core.impl.score.director.ScoreDirector;
 import com.openbusiness.opta.Destination;
 import com.openbusiness.opta.StandStill;
 import com.openbusiness.opta.dbs.DBSBranch;
+import com.openbusiness.gen.dbs.DBSLocation;
 
 public class ArrivalTimeUpdatingVariableListener implements PlanningVariableListener<Destination> {
 
@@ -58,6 +59,8 @@ public class ArrivalTimeUpdatingVariableListener implements PlanningVariableList
         if (customer == null) {
             return null;
         }
+	
+	
 	double distToPrevOrderInKm = customer.getDistanceToPrevOrder();
 	double distToPrevOrderInHr = distToPrevOrderInKm / 60.0;
 	int distToPrevOrderInMillis = (int)(distToPrevOrderInHr * 3600000);
@@ -66,6 +69,14 @@ public class ArrivalTimeUpdatingVariableListener implements PlanningVariableList
             // PreviousStandStill is the Vehicle, so we leave from the Depot at the best suitable time
             return (int)Math.max(customer.getMilliReadyTime(), distToPrevOrderInMillis);
         }
+	
+	// We have a more accurate time estimation
+	if (customer.getLocation() instanceof DBSLocation)
+	{
+	  DBSLocation loc = (DBSLocation)customer.getLocation();
+	  
+	  return (int)(previousMilliDepartureTime + loc.getTimeToLocationInMillis( customer.getPreviousStandstill().getLocation() ));
+	}
         return (int)(previousMilliDepartureTime + distToPrevOrderInMillis);
     }
 

@@ -3,7 +3,9 @@
   "dependencies": {
     "basePackages": {
       "iron-router": {},
-      "kinetic.js": {}
+      "kinetic.js": {},
+      "amqp": {},
+      "client-call": {}
     },
     "packages": {
       "iron-router": {
@@ -15,6 +17,16 @@
         "git": "https://github.com/brentjanderson/meteor-kinetic.git",
         "tag": "v5.0.1",
         "commit": "3c29f5bcbcdc9687081b336e59e8387dc02236a5"
+      },
+      "amqp": {
+        "git": "https://github.com/DonDaniello/meteor-amqp.git",
+        "tag": "v0.6.7",
+        "commit": "9ebb257042533f54748ca3d7c6b4212c6cc55d4f"
+      },
+      "client-call": {
+        "git": "https://github.com/subhog/meteor-client-call.git",
+        "tag": "v0.2.0",
+        "commit": "c6fd2429879002195010caca0a9b9cc3f10c51bb"
       },
       "blaze-layout": {
         "git": "https://github.com/EventedMind/blaze-layout.git",

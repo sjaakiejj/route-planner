@@ -32,7 +32,38 @@ public class DBSBranch extends Destination {
     // Shadow variable
     private Integer milliArrivalTime;
 
+    // Branch Information
+    private String m_name;
+    private String m_address;
+    private String m_postcode;
+    private String m_t;
+    private String m_f;
+    private String m_hours_weekdays;
+    private String m_hours_saturday;
+
     public DBSBranch(){}
+    
+    public DBSBranch( String name,
+    		      String address,
+		      String postCode,
+		      String t,
+		      String f,
+		      String hoursWeek,
+		      String hoursSat,
+		      Location loc,
+		      double vol,
+		      double weight )
+    {
+       this( loc, vol, weight,0,0 );
+       
+       m_name = name;
+       m_address = address;
+       m_postcode = postCode;
+       m_t = t;
+       m_f = f;
+       m_hours_weekdays = hoursWeek;
+       m_hours_saturday = hoursSat;
+    }
 
     public DBSBranch( Location loc,
     		      double vol,

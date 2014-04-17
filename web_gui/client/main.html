@@ -4,6 +4,13 @@
 <template name="layout">
   <div class="nav_bar"><a href='/'>Settings</a>
   			<a href='/Visualise'>Visualizer</a></div>
+			
+  <div class="server_message_container">
+    <div id='information_panel' class="info">Info message</div>
+ <!--   <div class="success">Successful operation message</div>
+    <div class="warning">Warning message</div>
+    <div class="error">Error message</div>-->
+  </div>
   {{> yield}}
 </template>
 
@@ -27,13 +34,18 @@
 </template>
 
 <template name="settings">
+  <div id="form_container">
+  </div>
+
+  <div id="standard_form">
+  
   <form id='settings_form'>
     <input type='hidden' name='mode' value='demo'>
     <table>
       <!-- COLUMN 1 -->
       <tr><th colspan='2'>General Settings</th></tr>
       <tr><td>Problem to solve:</td> 
-      	  <td><select name='problem'>
+      	  <td><select name='problem' id='problem'>
 	         <option value='standard'>Standard Constrained VRP</option>
 	         <option value='dbsmorning'>DBS Specific (Morning)</option>
 	      </select></td>
@@ -45,6 +57,7 @@
       <tr><td>Number of Orders: </td>
       	  <td><input type='number' name='orders' value='100'></td>
       </tr>
+      
       <!-- Vehicles -->
       <tr><th colspan='2'>Vehicle Generation</th></tr>
       <tr><td>Fuel Efficiency Range</td>
@@ -104,6 +117,88 @@
       <tr><td></td><td><input type='submit' value='Calculate'></td></tr>
     </table>
   </form>
+  </div>
+  
+  <div id="dbsmorning_form">
+  
+  <form id='settings_form'>
+    <input type='hidden' name='mode' value='demo'>
+    <table>
+      <!-- COLUMN 1 -->
+      <tr><th colspan='2'>General Settings</th></tr>
+      <tr><td>Problem to solve:</td> 
+      	  <td><select name='problem' id='problem'>
+	         <option value='standard'>Standard Constrained VRP</option>
+	         <option value='dbsmorning'>DBS Specific (Morning)</option>
+	      </select></td>
+      </tr>
+      
+      <tr><td>Day type:</td> 
+      	  <td><select name='schedule_day' id='sched_day'>
+	         <option value='weekday'>Weekday</option>
+	         <option value='saturday'>Saturday</option>
+	      </select></td>
+      </tr>
+      
+      <tr><td>Use Distance Matrix:</td> 
+      	  <td><select name='distance_matrix' id='dist_mat'>
+	         <option value='yes'>Yes</option>
+	         <option value='no'>No</option>
+	      </select></td>
+      </tr>
+      
+      <tr><td>Number of Vehicles:</td> 
+      	  <td><input type='number' name='vehicles' value='4'></td>
+      </tr>
+      
+      <!-- Vehicles -->
+      <tr><th colspan='2'>Vehicle Generation</th></tr>
+      <tr><td>Fuel Capacity Range</td>
+          <td><input type='text' name='fuel_capacity_range' value='200.0'></td>
+      </tr>
+      <tr><td>Weight Capacity Range</td>
+          <td><input type='text' name='weight_capacity_range' value='3000.0'></td>
+      </tr>
+      <tr><td>Volume Capacity Range</td>
+          <td><input type='text' name='volume_capacity_range' value='3000.0'></td>
+      </tr>
+
+      <tr><td>Fuel Capacity Lower Bounds</td>
+          <td><input type='text' name='fuel_capacity_lower_bound' value='100.0'></td>
+      </tr>
+      
+      <tr><td>Weight Capacity Lower Bounds</td>
+          <td><input type='text' name='weight_capacity_lower_bound' value='100.0'></td>
+      </tr>
+      <tr><td>Volume Capacity Lower Bounds</td>
+          <td><input type='text' name='volume_capacity_lower_bound' value='150.0'></td>
+      </tr>
+      
+      <!-- Orders -->
+      <tr><th colspan='2'>Order Generation</th></tr>
+      <tr><td>Order Weight Range</td>
+          <td><input type='text' name='order_weight_range' value='25.0'></td>
+      </tr>
+      <tr><td>Order Volume Range</td>
+          <td><input type='text' name='order_vol_range' value='25.0'></td>
+      </tr>
+      
+      <tr><td>Order Weight Lower Bounds</td>
+          <td><input type='text' name='order_weight_lower_bound' value='5.0'></td>
+      </tr>
+      <tr><td>Order Volume Lower Bounds</td>
+          <td><input type='text' name='order_vol_lower_bound' value='5.0'></td>
+      </tr>
+      <tr><td></td><td><input type='submit' value='Calculate'></td></tr>
+    </table>
+  </form>
+  </div>
+  
+  <div id="dbsafternoon_form"><!-- Nothing here --></div>
+  
+  <button id="terminate">Terminate Early</button>
+  <button id="solution">Get Solution</button>
+  <button id="testinfo">Display Info Message</button>
 </template>
 
 <template name='score'>

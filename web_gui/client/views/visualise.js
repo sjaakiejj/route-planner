@@ -17,6 +17,88 @@ var data_text;
 var background;
 
 var problem_type;
+var depot_loc = new Object();
+depot_loc.x = 39.5;
+depot_loc.y = 39.5;
+
+
+var min_lat;
+var min_lon;
+var max_lat;
+var max_lon;
+
+var gmaps_zoom = 11;
+var gmaps_center = new Object();
+var gmaps_size = new Object();
+gmaps_size.x = canvas_width;
+gmaps_size.y = canvas_height;
+
+function bound(value, opt_min, opt_max) {
+  if (opt_min != null) value = Math.max(value, opt_min);
+  if (opt_max != null) value = Math.min(value, opt_max);
+  return value;
+}
+
+function degreesToRadians(deg) {
+  return deg * (Math.PI / 180);
+}
+
+function radiansToDegrees(rad) {
+  return rad / (Math.PI / 180);
+}
+
+var PIXELS_PER_LON_DEG = 256/360;
+var PIXELS_PER_LON_RAD = 256/(2*Math.PI);
+
+function pointToLatLon( x, y )
+{
+   var latLon = new Object();
+   
+   var lng = ( x - 128 ) / PIXELS_PER_LON_DEG;
+   var latRad = ( y - 128 ) / PIXELS_PER_LON_RAD;
+   var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRad)) - Math.PI / 2);
+   
+   latLon.x = lat;
+   latLon.y = lng;
+   
+   return latLon;
+}
+
+function latLonToPoint( lat, lon )
+{
+   var point = new Object();
+   
+   point.x = 128 + lon * PIXELS_PER_LON_DEG;
+   
+   var siny = bound(Math.sin(degreesToRadians(lat)), -0.9999,0.9999);
+   point.y = 128 + 0.5 * Math.log((1 + siny) / (1 - siny)) * -PIXELS_PER_LON_RAD;
+   
+   
+   
+   return point;
+}
+
+function updateBounds()
+{
+  var zf = Math.pow(2, gmaps_zoom) * 2;
+  var dw = gmaps_size.x / zf;
+  var dh = gmaps_size.y / zf;
+  var cpx = latLonToPoint( gmaps_center.x, gmaps_center.y );
+  
+  var bounds = new Object();
+  bounds.bl = pointToLatLon(cpx.x - dw, cpx.y + dh);
+  bounds.tr = pointToLatLon(cpx.x + dw, cpx.y - dh);
+  
+  console.log("New Bounds: ");
+  console.log(bounds);
+  
+  min_lat = bounds.bl.x * -1;
+  min_lon = bounds.bl.y;
+  max_lat = bounds.tr.x * -1;
+  max_lon = bounds.tr.y;
+}
+
+var mapsUrl = '';
 
 function init()
 {
@@ -58,30 +140,96 @@ function init()
      strokeWidth: 4
   });
   
-  background = new Image();
-  background.onload = function() {
-    var yoda = new Kinetic.Image({
-      x: 0,
-      y: 0,
-      image: background,
-      width: canvas_width,
-      height: canvas_height
-    });
-    
-    bg_layer.add(yoda);
-    bg_layer.draw();
-  };
-    
-  background.src = 'singapore.png';
-    
-  problem_type = Session.get('properties')['problem'];
+  var url = generateMapsURL();
+  if(mapsUrl != url)
+  {
+     background = new Image();
+     background.onload = function() {
+       var yoda = new Kinetic.Image({
+	 x: 0,
+	 y: 0,
+	 image: background,
+	 width: canvas_width,
+	 height: canvas_height
+       });
+
+       bg_layer.add(yoda);
+       bg_layer.draw();
+     };
+
+     background.src = generateMapsURL();
+     mapsUrl = url;
+  }
   
   ui_layer.add(stats);    
 
   stage.add(bg_layer).add(layer).add(ui_layer);
   
-  kineticVisualise();
+  if( Session.get('properties') != undefined )
+    problem_type = Session.get('properties')['problem'];
+//  kineticVisualise();
 }
+
+function generateMapsURL()
+{ 
+   var markers = 'color:blue|label:DBS';
+   var json = Session.get('json_obj');
+   
+   var new_dpt = new Object();
+   new_dpt.x = 0;
+   new_dpt.y = 0;
+   
+   var count = 0;
+   
+   if( json != undefined )
+   {
+      var i = 0;
+      
+      while( json['Vehicle_'+i+"_order"] != undefined )
+      {
+         var orders = json['Vehicle_'+i+'_order'];
+	 
+	 for( var j = 0; j < orders.length; j++)
+	 {
+	   markers += '|' + orders[j].latitude + ',' + orders[j].longitute;
+	   
+	   new_dpt.x += orders[j].latitude;
+	   new_dpt.y += orders[j].longitute;
+	   
+	   count ++;
+	 }
+	 i++;
+      }
+      
+      depot_loc.x = new_dpt.x / count;
+      depot_loc.y = new_dpt.y / count;
+      gmaps_center.x = depot_loc.x;
+      gmaps_center.y = depot_loc.y; 
+      updateBounds();
+   }
+   
+   
+   var scale  = 2;
+   var center = depot_loc.x + ',' + depot_loc.y;
+   var zoom   = gmaps_zoom;
+   var size   = parseInt(canvas_width/scale) + 'x' + parseInt(canvas_height/scale);
+   var sensor = 'false';
+     
+   var mapsurl = 'http://maps.googleapis.com/maps/api/staticmap?center=' + center;
+   mapsurl += '&zoom=' + zoom;
+   mapsurl += '&size=' + size;
+   mapsurl += '&sensor=' + sensor;
+   mapsurl += '&scale=' + scale;
+   mapsurl += '&markers=' + markers;
+   
+   
+   
+   
+   console.log(mapsurl);
+   
+   return mapsurl;
+}
+
 
 Template.visualizer.rendered = function(){ init(); };   
 
@@ -105,101 +253,45 @@ Template.visualizer.canvasHeight = function(){
 function toCoord(lat,lon)
 { 
   var props = Session.get('properties');
-  var min_lat = props['min_lat'];  
-  var min_lon = props['min_lon'];  
-  var max_lat = props['max_lat'];  
-  var max_lon = props['max_lon'];  
-  
+  //var min_lat;
+  //var min_lon;
+  //var max_lat;
+  //var max_lon;
+  if(props['problem'] == "standard")
+  {
+   min_lat = props['min_lat']; 
+   min_lon = props['min_lon']; 
+   max_lat = props['max_lat']; 
+   max_lon = props['max_lon']; 
+  }
+  else
+  {
+//   min_lat= 1;    
+//   min_lon= 103;  
+//   max_lat= 2;    
+//   max_lon= 104;  
+  }
   var lat_range = max_lat - min_lat;
   var lon_range = max_lon - min_lon;
   
-  // Multipliers
-  var lat_mult  = canvas_width / lat_range;
-  var lon_mult  = canvas_height / lon_range;
+  lon_range = lon_range / 2;
+  lat_range = lat_range / 2;
   
-  return { x: (lat - min_lat) * lat_mult,
-  	   y: (lon - min_lon) * lon_mult};
-
-}
-
-// Draw the canvas once we get our data back
-//Template.visualizer.helpers
-function visualise()
-{
-   var json = Session.get('json_obj');
-   var colors = ["#FF0000", "#FFFF00", "#00FF00", "#00FFFF"];
-   var radius = 3;
-   
-   // Don't draw anything
-   if(json == undefined) 
-     return;
-   
-   var canvas = document.getElementById('visualizer');
-   
-   var g = canvas.getContext("2d");
-   
-   g.clearRect(0,0,canvas.width,canvas.height);
-   
-   var depot = toCoord( 39.5, 39.5 );
-   // Depot
-   g.beginPath();
-   g.arc(depot.x, depot.y, radius * 2, 0, 2*Math.PI);
-   g.closePath();
-   g.fillStyle = "#000000";
-  //ctx.closePath();
-   g.fill();
-   
-   var id = 0;
-   while(json["Vehicle_"+id+"_order"] != undefined)
-   {
-      var orders = json["Vehicle_"+id+"_order"];
-   
-      // Set color
-      var color = colors[id];
-      
-      
-     // var last_order = json["depot"];
-      var last_order = depot;//toCoord( 39.5,39.5); // TODO: Pull from JSON
-      var index = 0;
-      
-      while( orders[ index ] != undefined )
-      {
-         var order = orders[ index ];
-	 var coord = toCoord( orders[index].latitude, orders[index].longitute );
-	 
-	 // Draw a circle
-	 g.beginPath();
-	   g.arc(coord.x, coord.y, radius, 0, 2*Math.PI);
-	 g.closePath();
-	 g.fillStyle = "#000000";
-	 g.fill();
-	 
-	 // Draw a line
-	 g.beginPath();
-	   g.moveTo(last_order.x,last_order.y);
-	   g.lineTo(coord.x, coord.y);
-	 g.closePath();
-	 g.strokeStyle = color;
-	 g.stroke();
-	 
-	 last_order = coord;
-	 
-	 index ++;
-      }
-      
-      g.beginPath();
-        g.setLineDash([5,10]);
-	g.moveTo(last_order.x,last_order.y);
-	g.lineTo(depot.x, depot.y);
-      g.closePath();
-      g.strokeStyle = color;
-      g.stroke();
-      
-      g.setLineDash([]);
-      
-      id ++;
-   }
-   
+  // Multipliers
+  var lat_mult  = canvas_height / lat_range;
+  var lon_mult  = canvas_width / lon_range;
+  
+  var point = new Object();
+  
+  point.y = canvas_height - (lat - min_lat) * lat_mult;
+  point.x = (lon - min_lon) * lon_mult;
+  
+  point.x *= 1 + (1/9);
+  
+  point.x -= (canvas_width/2)*(1 + (2/9));
+  point.y += canvas_height/2;
+  
+  return point;
 }
 
 function milliToTime(milli)
@@ -409,12 +501,15 @@ function getRandomColor() {
 function kineticVisualise()
 {
    var json = Session.get('json_obj');
+   
    var colors = ["#FF0000", "#FFFF00", "#00FF00", "#00FFFF"];
    var radius = 5;
    
   if(json == undefined || layer == null) 
      return;
   
+  //init();
+   console.log(json);
   // Clear the layer
   layer.removeChildren();
   
@@ -431,7 +526,7 @@ function kineticVisualise()
   
   console.log(Session.get('properties'));
   console.log(centerX);
-  var depot = toCoord( centerX, centerY );
+  var depot = toCoord( depot_loc.x, depot_loc.y );
   var id = 0;
   while(json["Vehicle_"+id+"_order"] != undefined)
   {
@@ -483,11 +578,12 @@ function kineticVisualise()
     var line = new Kinetic.Line({
     	points: line_points,
 	stroke: getRandomColor(),
+	shadowColor: "#000000",
+	shadowBlur: 7,
 	strokeWidth: 2,
 	hitFunc: createStrokeHitFunc(line_points)
     });
     
-    console.log(line);
     
     var final_line = new Kinetic.Line({
     	points: [ last_order.x, last_order.y, depot.x, depot.y ],
@@ -553,8 +649,13 @@ Template.visualizer.rendered = function(){
 	//canvas_width = window.innerWidth;
 	//canvas_height = window.innerHeight - 200;
 	//visualise(); 
-	init();
-	kineticVisualise();
+	Deps.autorun(function(){
+	   console.log(Session.get('json_obj'));
+	   init();
+	   kineticVisualise();
+	});
+//	init();
+//	kineticVisualise();
 	dom_ready = true;
 };
 

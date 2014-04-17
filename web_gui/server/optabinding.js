@@ -1,5 +1,6 @@
 var jar_location = "/home/sjaakiejj/my-programs/OpenBusiness/route-planner/route-planner-1.0-SNAPSHOT-jar-with-dependencies.jar";
 var Future = Npm.require('fibers/future');
+Fiber = Npm.require('fibers');
 
 function generateSettings(args,callback)
 {
@@ -68,9 +69,84 @@ function planRoute(callback)
 
 function tester(args,callback)
 {
-  console.log(args);
+  
 }
 
+// ************************************
+// Boiler plate code
+// ************************************
+function createConnection()
+{
+  return amqp.createConnection({ host: 'localhost'},
+  			       { defaultExchange: 'route-planner-exchange'});
+}
+
+function init()
+{
+  Fiber(function(){
+  var connection = createConnection();
+  console.log("Initialising...");
+  
+  connection.on('ready', function() {
+  	connection.queue('myRpQueue', function(q){
+		q.bind('route-planner-exchange', 'client.#.*'); // We should listen to any messages routed to the client
+		
+		q.subscribe(receiveMessage);
+	});
+	
+  });
+  }).run();
+}
+
+
+// ************************************
+// Message Handling
+// ************************************
+
+function receiveMessage(msg)
+{
+  Fiber(function(){
+  console.log(msg);
+  var jsonStr = unescape(msg.data);
+  var json = JSON.parse(jsonStr);
+  
+  console.log(Number(json.client));
+  Meteor.ClientCall.apply(Number(json.client), 
+  			  'receiveMessage', 
+			  [JSON.stringify(json)]);
+  console.log("Client " + json.client + "Called");
+  }).run();
+  //Meteor.publish("message_listener_"+json.client, publishToClient(json));
+}
+
+function apply()
+{
+  console.log("Sending..");
+  Meteor.ClientCall.apply(15, 
+  			  'receiveMessage', 
+			  []);  
+}
+
+function publishMessage(conn,msg)
+{
+  var created = false;
+  if (conn === undefined) { 
+     conn = createConnection(); 
+     created = true;
+  } 
+  console.log("Connection created... Publishing...");
+  conn.on('ready', function () { 
+       console.log("Sending message..."); 
+       conn.publish("apiRpQueue", msg);
+       
+       if(created)
+       {
+         console.log("closing connection");
+       }
+  }); 
+}
+
+//
 Meteor.methods({
     "callPlanRoute": function (args) {
       console.log("Test");
@@ -94,6 +170,8 @@ Meteor.methods({
       return fut.wait();
     },
     "callTest": function (args) {
+      publishMessage(undefined, args);
+    /*
       console.log("Test");
       var fut = new Future();
       var bound_callback = Meteor.bindEnvironment(function (err, res) {
@@ -105,6 +183,12 @@ Meteor.methods({
         }
       });
       tester(args,bound_callback);
-      return fut.wait();
+      return fut.wait(); */
     }
   });
+
+
+// Initialise the listener
+init();
+
+apply();

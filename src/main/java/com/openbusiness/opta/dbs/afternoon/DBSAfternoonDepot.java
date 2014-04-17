@@ -1,4 +1,4 @@
-package com.openbusiness.opta.dbs;
+package com.openbusiness.opta.dbs.afternoon;
 
 //import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.openbusiness.opta.dbs.DBSDepot;
