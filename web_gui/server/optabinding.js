@@ -112,21 +112,12 @@ function receiveMessage(msg)
   var jsonStr = unescape(msg.data);
   var json = JSON.parse(jsonStr);
   
-  console.log(Number(json.client));
   Meteor.ClientCall.apply(Number(json.client), 
   			  'receiveMessage', 
 			  [JSON.stringify(json)]);
-  console.log("Client " + json.client + "Called");
+			  
   }).run();
   //Meteor.publish("message_listener_"+json.client, publishToClient(json));
-}
-
-function apply()
-{
-  console.log("Sending..");
-  Meteor.ClientCall.apply(15, 
-  			  'receiveMessage', 
-			  []);  
 }
 
 function getMethods(obj) {
@@ -143,6 +134,25 @@ function getMethods(obj) {
   return result;
 }
 
+var safeEndConnection = function(connection) {
+
+    // `connection.end` doesn't flush outgoing buffers, run a
+    // synchronous command to comprehend
+
+    connection.queue('tmp-' + Math.random(), {exclusive: true}, function(){
+        connection.end();
+	connection.destroy();
+	console.log(" [conn] Connection ended");
+
+        // `connection.end` in 0.1.3 raises a ECONNRESET error, silence it:
+        connection.once('error', function(e){
+            if (e.code !== 'ECONNRESET' || e.syscall !== 'read')
+                throw e;
+        });
+    });
+
+};
+
 function publishMessage(conn,msg)
 {
   var created = false;
@@ -150,18 +160,33 @@ function publishMessage(conn,msg)
      conn = createConnection();
      _connection = conn; 
   } 
+  console.log("Attempting to create connection");
+  conn.on('ready', function(){
+     console.log("Creating queue");
+     conn.once('error', function(e){ 
+     	throw e; 
+	// In any proper application we would log this error
+     });
+     conn.queue('apiRpQueue', {autoDelete: true,
+     			       durable: true}, function(queue){
+	console.log(" [apiRpQueue] Sending %s", msg );
+	conn.publish('apiRpQueue', msg, {deliveryMode: 2});
+	console.log(" [apiRpQueue] Sent %s", msg );
+	
+	safeEndConnection(conn);
+     });
+  });
+  /*
   console.log("Connection created... Publishing...");
   conn.on('ready', function () { 
-       console.log("Sending message..."); 
        
-       conn.publish("apiRpQueue", msg, {}, function(){
-       		console.log("Closing connection");
-       });
-  }); 
-       conn.publish("apiRpQueue", msg, {}, function(){
-       		console.log("Closing connection");
-       });
-       console.log("Disconnected");
+       conn.publish("apiRpQueue", msg);
+       console.log("[i] Sent message!"); 
+       
+       safeEndConnection(conn);
+       console.log("[i] Closed connection!");
+  }); */
+  
 }
 
 //
@@ -208,5 +233,3 @@ Meteor.methods({
 
 // Initialise the listener
 init();
-
-apply();

@@ -1,9 +1,11 @@
 
 var solutionUpdateInterval;
 var available_forms;
+var _connected;
 
 function init()
 {
+  // Initialise the forms
   var problems = ['standard','dbsmorning','dbsafternoon'];
   available_forms = new Object();
   
@@ -16,6 +18,24 @@ function init()
   }
   
   $('#form_container').html( available_forms['standard'] );
+  
+  // Establish connection
+  display_information( "Connecting..." );
+  
+  Meteor.call('callTest', {api_call: "api_heartbeat",
+			   client_id: ''+clt_id}, function(){});
+			   
+  window.setTimeout( function(){
+        if(!_connected)
+    	  throw_exception("Connection could not be established");
+  }, 5000 );
+}
+
+function connected()
+{
+  _connected = true;
+  
+  display_information( "Connected succesfully" );
 }
 
 /*
@@ -207,7 +227,13 @@ Meteor.ClientCall.methods({
       
       if(header == "data")
       {
-        if(package.body == "Solved" || package.body == "Unsolved" || package.body == "Solving")
+        console.log( package.body );
+        if(package.body === "heartbeat")
+	{ 
+	   console.log("connected");
+	   connected();
+	}
+        else if(package.body == "Solved" || package.body == "Unsolved" || package.body == "Solving")
 	{
 	   if(package.body == "Solved")
 	     window.clearInterval(solutionUpdateInterval);
@@ -228,6 +254,7 @@ Meteor.ClientCall.methods({
 				    
 				 }, 2000);
 	}
+	else if(package.body == "Queue..."){}
 	else
 	  Session.set("json_obj", JSON.parse(package.body));
       }

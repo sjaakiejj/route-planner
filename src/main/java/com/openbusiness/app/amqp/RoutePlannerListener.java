@@ -89,7 +89,9 @@ public class RoutePlannerListener implements MessageListener {
 
 	    else if( api_call.equals("api_run") )
 	      _api_run(thread_id, (String)json.get("body"));
-
+	      
+	    else if( api_call.equals("api_heartbeat") )
+	      _ctl_send_message(thread_id, "heartbeat");
 	    else
 	      _ctl_send_error(thread_id, "Unrecognized API call: " + messageBody);
 	  }
