@@ -117,9 +117,11 @@ function init()
         x: 10,
         y: 10,
         fontFamily: 'Calibri',
-        fontSize: 20,
+        fontSize: 35,
         text: 'Unsolved',
-        fill: 'black'
+        fill: 'white',
+	stroke: 'black',
+	strokeWidth: 1
       });
   data_text = new Kinetic.Text({
         x: 10,

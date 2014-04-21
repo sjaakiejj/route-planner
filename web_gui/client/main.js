@@ -156,7 +156,8 @@ Template.settings.events({
 	Meteor.call('callTest', {api_call: "api_clear_solution",
 				 client_id: ''+clt_id}, function(){});
 		    
-	Meteor.call('callTest', {api_call: "api_set_properties",
+	// Run the algorithm, passing in the properties as we do	    
+	Meteor.call('callTest', {api_call: "api_run",
 				 body: JSON.stringify(form),
 				 client_id: ''+clt_id},
 		    function(err,res)
@@ -213,14 +214,8 @@ Meteor.ClientCall.methods({
 	   
 	   Session.set('solutionStatus', package.body);
 	}
-	else if(package.body == "properties_set")
-	{
- 	   Meteor.call('callTest', {api_call: "api_run",
-				    client_id: ''+clt_id}, function(err,res){});
-	}
 	else if(package.body == "started")
 	{
-	   setTimeout(function(){
 	   solutionUpdateInterval = window.setInterval(function(){
 	  			    Meteor.call('callTest', 
 				                { api_call: "api_get_status",
@@ -232,7 +227,6 @@ Meteor.ClientCall.methods({
 						  function(err,res){});
 				    
 				 }, 2000);
-	   },1000); // need a better solution than timeout
 	}
 	else
 	  Session.set("json_obj", JSON.parse(package.body));

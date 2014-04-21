@@ -22,6 +22,8 @@ import java.io.InputStreamReader;
 import com.openbusiness.opta.Destination;
 import com.openbusiness.opta.dbs.DBSBranch;
 import com.openbusiness.gen.Location;
+import com.openbusiness.exceptions.*;
+
 
 public class DBSBranchFactory
 {
@@ -46,7 +48,15 @@ public class DBSBranchFactory
       double volRange = Double.parseDouble(prop.getProperty("order_vol_range"));
       double weightMin = Double.parseDouble(prop.getProperty("order_weight_lower_bound"));
       double weightRange = Double.parseDouble(prop.getProperty("order_weight_range"));
-    
+      
+      int    milliStartTime = 8 * 3600000;
+      int    milliDueTime = 9 * 3600000;
+      
+      if (prop.getProperty("problem").equals("dbsafternoon"))
+      {
+         milliStartTime = 15 * 3600000;
+	 milliDueTime   = 16 * 3600000;
+      }
     
       List< Destination > destinations = new ArrayList< Destination >();
       HashMap< String, Integer > order = new HashMap< String, Integer >();
@@ -74,9 +84,11 @@ public class DBSBranchFactory
 	        order.put( csv[i].replace("\"","").toLowerCase(), i );
 	      
 	      // Assume order
-	      if( order.get("Address") == null )
+	      if( order.get("address") == null )
 	      {
 	         // Coming soon to a theatre near you
+		 throw new InstallationException("Not implemented: Automatic Address Order",
+		 				 new Exception());
 	      }
 	   }
 	   
@@ -87,17 +99,6 @@ public class DBSBranchFactory
 
 	      vol = volMin + volRange * rand.nextDouble();
 	      weight = weightMin + weightRange * rand.nextDouble();
-	      
-	      System.out.println( "Branch: " + order.get("branch") + "\n" + 
-	      			  "Address: " + order.get("address") + "\n" + 
-	      			  "Post Code: " + order.get("postal code") + "\n" + 
-	      			  "T: " + order.get("t") + "\n" + 
-	      			  "F: " + order.get("f") + "\n" + 
-	      			  "Weekdays: " + order.get("hours (weekdays)") + "\n" + 
-	      			  "Saturday: " + order.get("hours (saturdays)") + "\n" +
-	      			  "Lon: " + order.get("longitude") + "\n" + 
-	      			  "Lat: " + order.get("latitude") + "\n"); 
-				  
 	      
 	      Location branchLocation;
 	      
@@ -130,22 +131,28 @@ public class DBSBranchFactory
 						branchLocation,
 					        vol,
 					        weight);
-					       
-	      // Set the opening time
-	      String [] openingHours;			       
-	      if( prop.getProperty("schedule_day").equals("weekday") )
-	         openingHours = csv[order.get("hours (weekdays)")].replace("\"","").replace(" ","").split("-");
+	      if( prop.getProperty("problem").equals("dbsafternoon") )
+	      {
+	         branch.setMilliReadyTime(milliStartTime);
+		 branch.setMilliDueTime(milliDueTime);
+	      }
 	      else
-	      	 openingHours = csv[order.get("hours (saturdays)")].replace("\"","").replace(" ","").split("-");
-	      
-	      Calendar cal = Calendar.getInstance();
-	      cal.setTime(ft.parse(openingHours[0]));
-	      branch.setMilliReadyTime(cal.get(Calendar.HOUR) * 3600000 
-	      				+ cal.get(Calendar.MINUTE) * 60000);
-					
-	      // TODO: Should use a property for this
-	      branch.setMilliDueTime(9 * 3600000);
-	      
+	      {				       
+		 // Set the opening time
+		 String [] openingHours;			       
+		 if( prop.getProperty("schedule_day").equals("weekday") )
+	            openingHours = csv[order.get("hours (weekdays)")].replace("\"","").replace(" ","").split("-");
+		 else
+	      	    openingHours = csv[order.get("hours (saturdays)")].replace("\"","").replace(" ","").split("-");
+
+		 Calendar cal = Calendar.getInstance();
+		 cal.setTime(ft.parse(openingHours[0]));
+		 branch.setMilliReadyTime(cal.get(Calendar.HOUR) * 3600000 
+	      				   + cal.get(Calendar.MINUTE) * 60000);
+
+		 // TODO: Should use a property for this
+		 branch.setMilliDueTime(milliDueTime);
+	      }
 	      // Skip impossible branches
 	      if( branch.getMilliReadyTime() < branch.getMilliDueTime() )
 	        destinations.add(branch);
@@ -157,13 +164,14 @@ public class DBSBranchFactory
 	Location.init(min_lat,max_lat,min_lon,max_lon);
       }
       catch(FileNotFoundException e){
-         e.printStackTrace();
+         throw new InstallationException("File not found: " + fileName, e);
       }
       catch(IOException e){
-         e.printStackTrace();
+         throw new InstallationException("Error opening file: " + fileName, e);
       }
       catch(Exception e){
-         e.printStackTrace();
+         // TODO - proper exception handling required
+         throw new InstallationException("Generic Exception: " + fileName, e);
       }
       finally {
 	 if (br != null) {
@@ -174,8 +182,6 @@ public class DBSBranchFactory
 	    }
 	 }
        }
-       
-       System.out.println("No problem with initialisation.\n" + destinations.size() + " destinations generated");
        
        return destinations;
  

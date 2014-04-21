@@ -20,8 +20,7 @@ import java.lang.Thread;
 import com.openbusiness.opta.*;
 import com.openbusiness.gen.*;
 import com.openbusiness.gen.dbs.*;
-import com.openbusiness.exceptions.InvalidModeException;
-import com.openbusiness.exceptions.UnrecognizedProblemException;
+import com.openbusiness.exceptions.*;
 
 import com.openbusiness.opta.Planner;
  
@@ -30,11 +29,11 @@ public class RoutingEngine extends Thread
   private Properties m_properties;
   private int m_number_vehicles;
   private int m_number_destinations;
-  private int m_mode;
   private boolean m_running;
   private DeliverySolution m_schedule;
   private Planner m_planner;
   private boolean m_read_orders_from_file;
+  private boolean m_starting;
   
   private String m_exit_error;
   
@@ -42,10 +41,20 @@ public class RoutingEngine extends Thread
   {
      m_schedule = null;
      m_running = false;
-     m_mode = SoftwareMode.DEMO;
      m_planner = new Planner();
      m_read_orders_from_file = true;
      m_exit_error = "";
+     m_starting = false;
+  }
+  
+  public boolean getStarting()
+  {
+     return m_starting;
+  }
+  
+  public void setStarting(boolean starting)
+  {
+     m_starting = true;
   }
   
   public String getErrorMessage()
@@ -65,7 +74,7 @@ public class RoutingEngine extends Thread
  /*
   * Entry Point 
   */
-  public void defaultSetup(List<String> args)
+  public void defaultSetup(List<String> args) throws UsageException
   {
     // Properties properties = null;
   
@@ -94,7 +103,6 @@ public class RoutingEngine extends Thread
      * Setup graphical interface
      */
     
-    System.out.println(m_mode + " ::: " + m_number_destinations + " ::: ");
     // Generate according to the mode (Test is static from a file)
     
     try{
@@ -106,13 +114,12 @@ public class RoutingEngine extends Thread
 	 destinations = DBSBranchFactory.generateFromFile("dbs_branches.csv", m_properties);
        }
        else
-	 destinations = DestinationFactory.generate(m_mode,m_number_destinations, m_properties);
+	 destinations = DestinationFactory.generate(m_number_destinations, m_properties);
        
        // Start the algorithm
-       System.out.println("Mode: " + m_mode);
        System.out.println("NoVehicles: " + m_number_vehicles);
        System.out.println("Properties: " + m_properties);
-       vehicles = VehicleFactory.generate(m_mode,m_number_vehicles, m_properties);
+       vehicles = VehicleFactory.generate(m_number_vehicles, m_properties);
        
        System.out.println(vehicles.size() + " vehicles generated");	
        m_running = true;
@@ -120,6 +127,7 @@ public class RoutingEngine extends Thread
        m_running = false;
     } 
     catch(Exception e){
+       // TODO: Throw proper exceptions here
        m_exit_error = "Exception in RoutingEngine.run: " + e;
     }
   }
@@ -139,18 +147,19 @@ public class RoutingEngine extends Thread
      return solutionToJSON(solution,m_properties);
   }
   
-  public void loadPropertiesFromString(String jsonString)
+  public void loadPropertiesFromString(String jsonString) throws JSONException
   {
      try{
        m_properties = JSONPropertyReader.load(jsonString);
      }
      catch(Exception e)
      {
-       e.printStackTrace();
+       throw new JSONException(jsonString, e);
      }
   }
   
   public void loadPropertiesFromFile(String type, String fileName)
+  			throws PropertyFileException
   {
     // Initialisation of Streaming Objects
     InputStream input = null;
@@ -164,12 +173,10 @@ public class RoutingEngine extends Thread
 	m_properties = JSONPropertyReader.load(input);
       }
       catch(IOException ex){
-        
-      }
-      catch(InvalidModeException ex){
+        throw new PropertyFileException(fileName, ex);
       }
       catch(Exception ex){
-        System.out.println(ex);
+      	throw new PropertyFileException(fileName, ex);
       }
     }
     else
@@ -189,6 +196,7 @@ public class RoutingEngine extends Thread
 	      input.close();
 	   }
 	   catch(IOException e){
+	      // TODO: should throw application exception
 	      e.printStackTrace();
 	   }
 	 }

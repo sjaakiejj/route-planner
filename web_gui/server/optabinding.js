@@ -75,6 +75,8 @@ function tester(args,callback)
 // ************************************
 // Boiler plate code
 // ************************************
+var _connection;
+
 function createConnection()
 {
   return amqp.createConnection({ host: 'localhost'},
@@ -127,23 +129,39 @@ function apply()
 			  []);  
 }
 
+function getMethods(obj) {
+  var result = [];
+  for (var id in obj) {
+    try {
+      if (typeof(obj[id]) == "function") {
+        result.push(id + ": " + obj[id].toString());
+      }
+    } catch (err) {
+      result.push(id + ": inaccessible");
+    }
+  }
+  return result;
+}
+
 function publishMessage(conn,msg)
 {
   var created = false;
   if (conn === undefined) { 
-     conn = createConnection(); 
-     created = true;
+     conn = createConnection();
+     _connection = conn; 
   } 
   console.log("Connection created... Publishing...");
   conn.on('ready', function () { 
        console.log("Sending message..."); 
-       conn.publish("apiRpQueue", msg);
        
-       if(created)
-       {
-         console.log("closing connection");
-       }
+       conn.publish("apiRpQueue", msg, {}, function(){
+       		console.log("Closing connection");
+       });
   }); 
+       conn.publish("apiRpQueue", msg, {}, function(){
+       		console.log("Closing connection");
+       });
+       console.log("Disconnected");
 }
 
 //

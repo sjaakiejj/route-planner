@@ -15,17 +15,7 @@ import com.openbusiness.opta.Destination;
 
 public class DestinationFactory
 {
-  public static List<Destination> generate(int mode, int amount, Properties prop)
-  {
-    if(mode == SoftwareMode.TEST)
-      return generateTestSet();
-    else if(mode == SoftwareMode.DEMO)
-      return generateRandomized(amount, prop);
-    else
-      return null;
-  }
-  
-  private static List<Destination> generateRandomized(int amount,Properties prop)
+  public static List<Destination> generate(int amount, Properties prop)
   {
     // Randomly generate within the restrictions
     Random rand = new Random();
@@ -52,31 +42,5 @@ public class DestinationFactory
       					   vol,weight));
     }
     return destinations;
- //   return deliveryOrders.toArray(new DeliveryOrder[deliveryOrders.size()]);
-  }
-  
-  private static List<Destination> generateTestSet()
-  {
-   // String testFile = SoftwareSettings.get("testFile");
-    
-    // Open the file
-    
-    //
-    List<Destination> deliveryOrders = new ArrayList<Destination>();
-    
-    // Read the values one by one
-    //while
-    for(int i = 0; i < 10; i++) // Should use file 
-    {
-      double lat,lon,vol,weight;
-      
-      lat = lon = vol = weight = i; 
-      lat = Location.getMinLat() + (double)i / 10.0;
-      lon = Location.getMinLon() - (double)i / 10.0;
-      deliveryOrders.add(new Destination(new Location(lon,lat),
-      					   vol,weight));
-    }
-    return deliveryOrders;
-    //return deliveryOrders.toArray(new DeliveryOrder[deliveryOrders.size()]);
   }
 }

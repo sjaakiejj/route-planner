@@ -7,12 +7,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.amqp.core.AmqpTemplate;
 
-// Temporary
-import com.openbusiness.app.App;
-
 // To actually run the application
 import com.openbusiness.app.RoutingEngine;
 import com.openbusiness.app.JSONOutputWriter;
+import com.openbusiness.exceptions.ProgrammerException;
+import com.openbusiness.exceptions.UsageException;
 
 // JSON
 import org.json.simple.JSONObject;
@@ -76,23 +75,33 @@ public class RoutePlannerListener implements MessageListener {
 	    m_thread_map.put(thread_id, r_thread);
 	  }
 
-	  if( api_call.equals("api_clear_solution") )
-	    _api_clear_solution(thread_id);
-	  else if( api_call.equals("api_terminate_early") )
-	    _api_terminate_early(thread_id);
-	  else if( api_call.equals("api_get_best_solution") )
-	    _api_get_best_solution(thread_id);
-	  else if( api_call.equals("api_get_status") )
-	    _api_get_status(thread_id);
-	  else if( api_call.equals("api_set_properties") )
-	    _api_set_properties( thread_id, (String)json.get("body"));
+	  try{
+	    if( api_call.equals("api_clear_solution") )
+	      _api_clear_solution(thread_id);
+	    else if( api_call.equals("api_terminate_early") )
+	      _api_terminate_early(thread_id);
+	    else if( api_call.equals("api_get_best_solution") )
+	      _api_get_best_solution(thread_id);
+	    else if( api_call.equals("api_get_status") )
+	      _api_get_status(thread_id);
+	    else if( api_call.equals("api_set_properties") )
+	      _api_set_properties( thread_id, (String)json.get("body"));
 
-	  else if( api_call.equals("api_run") )
-	    _api_run(thread_id);
+	    else if( api_call.equals("api_run") )
+	      _api_run(thread_id, (String)json.get("body"));
 
-	  else
-	    _ctl_send_error(thread_id, "Unrecognized API call: " + messageBody);
+	    else
+	      _ctl_send_error(thread_id, "Unrecognized API call: " + messageBody);
 	  }
+	  catch(UsageException e){
+	      _ctl_send_error(thread_id, "Exception in processing API call: " + e.getMessage());
+	      // and log the stack trace
+	  }
+	  catch(ProgrammerException e){
+	      _ctl_send_error(thread_id, "API Exception. Please contact RoutingEngine admin.");
+	      // and log the stack trace
+	  }
+	}
 	catch(ParseException e)
 	{
 	  _ctl_send_error(thread_id, "Ill-formatted JSON: " + e);
@@ -100,6 +109,8 @@ public class RoutePlannerListener implements MessageListener {
 	catch(Exception e)
 	{
 	  _ctl_send_error(thread_id, ""+e);
+	  
+	  // TODO: Throw appropriate exceptions here
 	  e.printStackTrace();
 	}
     }
@@ -120,13 +131,21 @@ public class RoutePlannerListener implements MessageListener {
     
     private void _api_get_best_solution(int thread_id)
     {
-	if( m_thread_map.get(thread_id).getBestSolutionJSON() == null )
-          _ctl_send_error( thread_id, "The algorithm has not started yet" );
-	else
+	String solution = m_thread_map.get(thread_id).getBestSolutionJSON();
+	
+	if( solution == null )
 	{
-	  String solution = m_thread_map.get(thread_id).getBestSolutionJSON();
-	  _ctl_send_message( thread_id, solution );
+	  if( !m_thread_map.get(thread_id).getStarting() )
+	  {
+            _ctl_send_error( thread_id, "The algorithm has not started yet" );
+	    return;
+	  }
+	  else
+	    return;
 	}
+	
+	
+	_ctl_send_message( thread_id, solution );
     }
     
     private void _api_get_status(int thread_id)
@@ -141,7 +160,7 @@ public class RoutePlannerListener implements MessageListener {
 	  _ctl_send_message( thread_id, "Solved" );
     }
     
-    private void _api_set_properties(int thread_id, String propertyJson)
+    private void _api_set_properties(int thread_id, String propertyJson) throws UsageException
     {
         _api_print("Setting properties...");
 	m_thread_map.get(thread_id).loadPropertiesFromString(propertyJson);
@@ -149,33 +168,25 @@ public class RoutePlannerListener implements MessageListener {
 	_ctl_send_message( thread_id, "properties_set");
     }
     
-    private void _api_run(int thread_id)
+    private void _api_run(int thread_id, String propertyJson) throws UsageException,ProgrammerException
     {
         _api_print("Running algorithm");
-	if( m_thread_map.get(thread_id).propertiesSet() &&
-		!m_thread_map.get(thread_id).running() )
+	if( !m_thread_map.get(thread_id).running() )
 	{
+	   _api_clear_solution(thread_id);
+	   // Set the properties
+	   m_thread_map.get(thread_id).loadPropertiesFromString(propertyJson);
 	   _api_print("Starting...");
+	   m_thread_map.get(thread_id).setStarting(true);
+	   
+	   _ctl_send_message(thread_id,"started");
+	   
 	   m_thread_map.get(thread_id).apiSetup();
 	   m_thread_map.get(thread_id).start();
 	   
 	   if (m_thread_map.get(thread_id).getErrorMessage() != "")
 	   { 
 	      _ctl_send_error(thread_id, m_thread_map.get(thread_id).getErrorMessage());
-	   }
-	   else
-	   {
-	     // TODO: This is a horrible way of dealing with the bug.
-	     // Need to change.
-	     try{
-	     while(!m_thread_map.get(thread_id).running()) Thread.sleep(1000); 
-	     _ctl_send_message(thread_id, "started");
-	     }
-	     catch(Exception e){
-	       _ctl_send_error(thread_id, "Thread Interrupted: " + e);
-	     }
-	     
-	  
 	   }
 	}
 	else if( !m_thread_map.get(thread_id).propertiesSet() )
@@ -214,6 +225,19 @@ public class RoutePlannerListener implements MessageListener {
 	
 	out.writeData("header", "error");
 	out.writeData("client", ""+thread_id);
+	out.writeData("body", error);
+	
+	m_sender_template.convertAndSend("client.routeplanner."+thread_id, out.getString());
+    }
+    
+    private void _ctl_send_error(int thread_id, int error_code, String error)
+    {
+        System.out.println(ANSI_RED + "[ERROR]["+error_code+"] " + error + ANSI_RESET);
+	JSONOutputWriter out = new JSONOutputWriter();
+	
+	out.writeData("header", "error");
+	out.writeData("client", ""+thread_id);
+	out.writeData("code", ""+error_code);
 	out.writeData("body", error);
 	
 	m_sender_template.convertAndSend("client.routeplanner."+thread_id, out.getString());
