@@ -13,7 +13,6 @@ function init()
   {
     var frm = $('#' + problems[i] + '_form');
     available_forms[ problems[i] ] = frm.html();
-    console.log(frm);
     frm.remove();
   }
   
@@ -72,8 +71,6 @@ function display_information( info_message )
 
 function display_settings( mode )
 {
-   console.log("changing form to " + mode);
-   console.log( available_forms );
    form={};
    $.each($('#settings_form').serializeArray(), function() {
           form[this.name] = this.value;
@@ -82,8 +79,6 @@ function display_settings( mode )
    $('#form_container').html( available_forms[ mode ] );
    for (var key in form) {
      if (form.hasOwnProperty(key)) {
-       console.log(key);
-       console.log($('input[name='+key+']') );
        if( key == 'problem' )
        {
          $('#problem').attr('id','problem_bk');
@@ -92,7 +87,6 @@ function display_settings( mode )
        }
        else if( $('input[name='+key+']') != undefined )
        {
-         console.log('input[name='+key+']');
          $('input[name='+key+']').val( form[key] );
        }
        else if( $('select[name='+key+']') != undefined )
@@ -101,7 +95,6 @@ function display_settings( mode )
        }
      }
    }
-   console.log("changed form");
 }
 
 function throw_exception( error_message )
@@ -186,7 +179,7 @@ Template.settings.events({
 		      console.log(res);
 		    });
 	Session.set('properties', form);
-	//console.log();
+	//g();
         event.preventDefault();
         event.stopPropagation();
         return false; 
@@ -194,7 +187,6 @@ Template.settings.events({
       'click #terminate': function(event){
  	Meteor.call('callTest', {api_call: "api_terminate_early",
 				 client_id: ''+clt_id}, function(err,res){});
-        console.log("Terminate clicked");
         event.preventDefault();
         event.stopPropagation();
 	return false;
@@ -202,7 +194,6 @@ Template.settings.events({
       'click #solution': function(event){
  	Meteor.call('callTest', {api_call: "api_get_best_solution",
 				 client_id: ''+clt_id}, function(err,res){});
-        console.log("Terminate clicked");
         event.preventDefault();
         event.stopPropagation();
 	return false;
@@ -227,7 +218,6 @@ Meteor.ClientCall.methods({
       
       if(header == "data")
       {
-        console.log( package.body );
         if(package.body === "heartbeat")
 	{ 
 	   console.log("connected");
@@ -256,7 +246,10 @@ Meteor.ClientCall.methods({
 	}
 	else if(package.body == "Queue..."){}
 	else
+	{
 	  Session.set("json_obj", JSON.parse(package.body));
+	  visualizer.setJson( JSON.parse(package.body) );
+	}
       }
       else if(header == "error")
         throw_exception( package.body );

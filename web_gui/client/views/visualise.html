@@ -1,5 +1,13 @@
 <template name='visualizer'>
 
+  Zoom Level: 
+  <select id='maps_zoom'>
+    <option value='9'>9</option>
+    <option value='10'>10</option>
+    <option value='11'>11</option>
+    <option value='12'>12</option>
+    <option value='13'>13</option>
+  </select>
   Status: {{{solutionStatus}}} <br/>
   <!--<canvas id="visualizer" 
   	  width="{{canvasWidth}}" 
@@ -8,7 +16,6 @@
   	
   </canvas>-->
 
-  <div id='visualizerDiv'>
-  </div>
+  <div id='visualizerDiv'></div>
 
 </template>

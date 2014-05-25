@@ -1,7 +1,6 @@
 var canvas_width = window.innerWidth;	     //canvas_width = 1400;
 var canvas_height = window.innerHeight - 100;//canvas_height = 700;
-	console.log(canvas_height);
-
+	
 var stage;
 var bg_layer;
 var layer;
@@ -21,80 +20,34 @@ var depot_loc = new Object();
 depot_loc.x = 39.5;
 depot_loc.y = 39.5;
 
+var cssDep = new Deps.Dependency;
 
 var min_lat;
 var min_lon;
 var max_lat;
 var max_lon;
 
-var gmaps_zoom = 11;
+var gmaps_zoom = 10;
 var gmaps_center = new Object();
 var gmaps_size = new Object();
 gmaps_size.x = canvas_width;
 gmaps_size.y = canvas_height;
 
-function bound(value, opt_min, opt_max) {
-  if (opt_min != null) value = Math.max(value, opt_min);
-  if (opt_max != null) value = Math.min(value, opt_max);
-  return value;
-}
-
-function degreesToRadians(deg) {
-  return deg * (Math.PI / 180);
-}
-
-function radiansToDegrees(rad) {
-  return rad / (Math.PI / 180);
-}
-
-var PIXELS_PER_LON_DEG = 256/360;
-var PIXELS_PER_LON_RAD = 256/(2*Math.PI);
-
-function pointToLatLon( x, y )
+function setZoom(zoom)
 {
-   var latLon = new Object();
-   
-   var lng = ( x - 128 ) / PIXELS_PER_LON_DEG;
-   var latRad = ( y - 128 ) / PIXELS_PER_LON_RAD;
-   var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRad)) - Math.PI / 2);
-   
-   latLon.x = lat;
-   latLon.y = lng;
-   
-   return latLon;
-}
-
-function latLonToPoint( lat, lon )
-{
-   var point = new Object();
-   
-   point.x = 128 + lon * PIXELS_PER_LON_DEG;
-   
-   var siny = bound(Math.sin(degreesToRadians(lat)), -0.9999,0.9999);
-   point.y = 128 + 0.5 * Math.log((1 + siny) / (1 - siny)) * -PIXELS_PER_LON_RAD;
-   
-   
-   
-   return point;
+  gmaps_zoom = zoom;
+  init();
+  kineticVisualise();
 }
 
 function updateBounds()
 {
-  var zf = Math.pow(2, gmaps_zoom) * 2;
-  var dw = gmaps_size.x / zf;
-  var dh = gmaps_size.y / zf;
-  var cpx = latLonToPoint( gmaps_center.x, gmaps_center.y );
-  
-  var bounds = new Object();
-  bounds.bl = pointToLatLon(cpx.x - dw, cpx.y + dh);
-  bounds.tr = pointToLatLon(cpx.x + dw, cpx.y - dh);
-  
-  console.log("New Bounds: ");
-  console.log(bounds);
+  var bounds = maps.getBounds(gmaps_zoom, gmaps_size, gmaps_center);
   
   min_lat = bounds.bl.x * -1;
   min_lon = bounds.bl.y;
   max_lat = bounds.tr.x * -1;
+
   max_lon = bounds.tr.y;
 }
 
@@ -102,17 +55,9 @@ var mapsUrl = '';
 
 function init()
 {
-  stage = new Kinetic.Stage({
-    container: "visualizerDiv",
-    width: canvas_width,
-    height: canvas_height
-  });
-
-  layer = new Kinetic.Layer();
-  ui_layer = new Kinetic.Layer(); 
-  bg_layer = new Kinetic.Layer(); 
-
- 
+  if( Session.get('properties') != undefined )
+    problem_type = Session.get('properties')['problem'];
+  // Initialising data
   stats = new Kinetic.Text({
         x: 10,
         y: 10,
@@ -142,9 +87,37 @@ function init()
      strokeWidth: 4
   });
   
+  // Setting up the stage
+     console.log($('#visualizerDiv').html());
+  
+  if( stage === undefined ||
+  	$('#visualizerDiv').html() === "")
+  {
+     stage = new Kinetic.Stage({
+       container: "visualizerDiv",
+       width: canvas_width,
+       height: canvas_height
+     });
+     
+     
+     if(bg_layer === undefined)
+       bg_layer = new Kinetic.Layer(); 
+     
+     
+     // Add the layers to the stage
+     stage.add(bg_layer)
+     layer = new Kinetic.Layer();
+     ui_layer = new Kinetic.Layer(); 
+  
+     ui_layer.add(stats);
+     stage.add(layer).add(ui_layer);
+  }
+  
   var url = generateMapsURL();
   if(mapsUrl != url)
   {
+     bg_layer.removeChildren();
+     
      background = new Image();
      background.onload = function() {
        var yoda = new Kinetic.Image({
@@ -159,17 +132,10 @@ function init()
        bg_layer.draw();
      };
 
-     background.src = generateMapsURL();
+     background.src = url;
      mapsUrl = url;
+     console.log(mapsUrl);
   }
-  
-  ui_layer.add(stats);    
-
-  stage.add(bg_layer).add(layer).add(ui_layer);
-  
-  if( Session.get('properties') != undefined )
-    problem_type = Session.get('properties')['problem'];
-//  kineticVisualise();
 }
 
 function generateMapsURL()
@@ -178,6 +144,7 @@ function generateMapsURL()
    var json = Session.get('json_obj');
    
    var new_dpt = new Object();
+   var order_markers = new Array();
    new_dpt.x = 0;
    new_dpt.y = 0;
    
@@ -193,7 +160,8 @@ function generateMapsURL()
 	 
 	 for( var j = 0; j < orders.length; j++)
 	 {
-	   markers += '|' + orders[j].latitude + ',' + orders[j].longitute;
+	  // markers += '|' + orders[j].latitude.toFixed(4) + ',' + orders[j].longitute.toFixed(4);
+	   order_markers.push(orders[j].latitude.toFixed(4) + ',' + orders[j].longitute.toFixed(4));
 	   
 	   new_dpt.x += orders[j].latitude;
 	   new_dpt.y += orders[j].longitute;
@@ -203,13 +171,21 @@ function generateMapsURL()
 	 i++;
       }
       
-      depot_loc.x = new_dpt.x / count;
-      depot_loc.y = new_dpt.y / count;
+      order_markers.sort();
+      
+      for(var i = 0; i < order_markers.length; i++)
+      {
+      
+         markers += "|" + order_markers[i];
+      }
+      
+      depot_loc.x = (new_dpt.x / count).toFixed(4);
+      depot_loc.y = (new_dpt.y / count).toFixed(4);
+      
       gmaps_center.x = depot_loc.x;
       gmaps_center.y = depot_loc.y; 
       updateBounds();
    }
-   
    
    var scale  = 2;
    var center = depot_loc.x + ',' + depot_loc.y;
@@ -224,20 +200,15 @@ function generateMapsURL()
    mapsurl += '&scale=' + scale;
    mapsurl += '&markers=' + markers;
    
-   
-   
-   
-   console.log(mapsurl);
-   
    return mapsurl;
 }
 
 
-Template.visualizer.rendered = function(){ init(); };   
 
       
 function writeStats(message)
 {
+  // ui_layer.clear();
    stats.setText(message);
    ui_layer.draw();
 }
@@ -259,20 +230,6 @@ function toCoord(lat,lon)
   //var min_lon;
   //var max_lat;
   //var max_lon;
-  if(props['problem'] == "standard")
-  {
-   min_lat = props['min_lat']; 
-   min_lon = props['min_lon']; 
-   max_lat = props['max_lat']; 
-   max_lon = props['max_lon']; 
-  }
-  else
-  {
-//   min_lat= 1;    
-//   min_lon= 103;  
-//   max_lat= 2;    
-//   max_lon= 104;  
-  }
   var lat_range = max_lat - min_lat;
   var lon_range = max_lon - min_lon;
   
@@ -511,9 +468,19 @@ function kineticVisualise()
      return;
   
   //init();
-   console.log(json);
   // Clear the layer
-  layer.removeChildren();
+  
+  layer.remove();
+  ui_layer.remove();
+  
+  layer = new Kinetic.Layer();
+  ui_layer = new Kinetic.Layer();
+  
+  ui_layer.add(stats);
+  stage.add(layer).add(ui_layer);
+  
+  //layer.removeChildren();
+  //ui_layer.removeChildren();
   
   console.log("Now Rendering");
   
@@ -525,9 +492,6 @@ function kineticVisualise()
   					     Number(props['min_lat'])) / 2.0);
   var centerY = Number(props['min_lon']) + ((Number(props['max_lon']) - 
   					     Number(props['min_lon'])) / 2.0);
-  
-  console.log(Session.get('properties'));
-  console.log(centerX);
   var depot = toCoord( depot_loc.x, depot_loc.y );
   var id = 0;
   while(json["Vehicle_"+id+"_order"] != undefined)
@@ -555,26 +519,9 @@ function kineticVisualise()
        line_points[ 2 + (index * 2)] = coord.x;
        line_points[ 3 + (index * 2)] = coord.y;
        
-       // Draw the circle
-       /*
-       var circle = new Kinetic.Circle({
-       	  x: coord.x,
-	  y: coord.y,
-	  radius: radius,
-	  strokeWidth: 4,
-	  fill: 'black',
-	  hitFunc: createCircleHitFunc(coord)
-       });
-       
-       circle.on('mouseover', createCallback("Order", index));
-       circle.on('mouseout', createCallback("Nothing",""));*/
-       
-      // circles.push(circle);
-      // circles[ circles.length-1 ].on('mouseover', function(){ console.log(index) });
-       
+       //
        last_order = coord;
        index ++;
-    //   layer.add(circle);
     }
     
     var line = new Kinetic.Line({
@@ -598,9 +545,6 @@ function kineticVisualise()
      line.on('mouseover', createCallback("Vehicle", id, json["Vehicle_"+id]));
      line.on('mouseout', createCallback("Nothing",""));
      
-    // lines.push(line);
-     
-     
      layer.add(line);
      layer.add(final_line);
      
@@ -623,7 +567,6 @@ function kineticVisualise()
        layer.add(circle);
      }
      
-     
      id ++;
   }
   
@@ -638,26 +581,51 @@ function kineticVisualise()
   layer.add(depotCircle);
   
   console.log("Adding to stage");
- // stage.add(layer);
   stage.draw();
   
   console.log("Done");
+  console.log(stage);
 }
 
 var dom_ready = false;
 
+Template.visualizer.events({
+   'change #maps_zoom': function(){
+      var val = $('#maps_zoom').val();
+      setZoom(val);
+   }
+});
+
+//Template.visualizer.rendered = function(){ init(); };   
+
 //if(Session.get("json_obj") != undefined)
+visualizer = {
+  jsonObj: null,
+  getJson: function () {
+      cssDep.depend()
+      return this.jsonObj;
+  },
+  setJson: function (w) {
+      if(w!=this.jsonObj) {
+          this.jsonObj = w;
+          cssDep.changed();
+	  
+	  // Visualise
+          init();
+	  kineticVisualise();
+      }
+  }
+}
+
+
 Template.visualizer.rendered = function(){
-	//canvas_width = window.innerWidth;
-	//canvas_height = window.innerHeight - 200;
-	//visualise(); 
+	/*
 	Deps.autorun(function(){
-	   console.log(Session.get('json_obj'));
+	   Session.get("json_obj");
 	   init();
 	   kineticVisualise();
-	});
-//	init();
-//	kineticVisualise();
+	});*/
+	console.log("rendered");
 	dom_ready = true;
 };
 
@@ -672,19 +640,5 @@ Template.visualizer.solutionStatus = function(){
   else
     str=Session.get("solutionStatus");
   
-  // Update the visualiser
-  if( dom_ready == true && Session.get("solutionStatus") == "solved")
-  {
-   // visualise(); 
-    kineticVisualise(); 
-    dom_ready = false;
-  }
   return str;
 }
-
-/*  
-if(Session.get('solutionStatus') == "solved"
-	&& dom_ready)
-  visualise();
-  */
-
